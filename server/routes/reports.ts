@@ -37,36 +37,68 @@ router.get('/labor', async (req: AuthRequest, res, next) => {
         job: true
       },
       orderBy: [
-        { date: 'asc' },
         { laborer: { name: 'asc' } }
       ]
     });
 
-    const reportData = timesheets.map(ts => {
-      const regularPay = Number(ts.hoursWorked) * Number(ts.laborer.salaryRate);
-      const overtimePay = Number(ts.overtime) * Number(ts.laborer.salaryRate) * Number(ts.overtimeMultiplier);
+    // Group by laborer and aggregate data
+    const laborerMap = new Map();
+    
+    timesheets.forEach(ts => {
+      const laborerId = ts.laborer.id;
+      const regularHours = Number(ts.hoursWorked);
+      const overtimeHours = Number(ts.overtime);
+      const overtimeMultiplier = Number(ts.overtimeMultiplier);
+      const salaryRate = Number(ts.laborer.salaryRate);
+      
+      const regularPay = regularHours * salaryRate;
+      const overtimePay = overtimeHours * salaryRate * overtimeMultiplier;
       const totalPay = regularPay + overtimePay;
-      const totalHours = Number(ts.hoursWorked) + Number(ts.overtime);
+      const totalHours = regularHours + overtimeHours;
 
-      return {
-        date: ts.date,
-        laborerName: ts.laborer.name,
-        laborerId: ts.laborer.idNumber,
-        jobName: ts.job.name,
-        regularHours: Number(ts.hoursWorked),
-        overtimeHours: Number(ts.overtime),
-        overtimeMultiplier: Number(ts.overtimeMultiplier),
-        totalHours,
-        salaryRate: Number(ts.laborer.salaryRate),
-        regularPay,
-        overtimePay,
-        totalPay,
-        notes: ts.notes || ''
-      };
+      if (laborerMap.has(laborerId)) {
+        const existing = laborerMap.get(laborerId);
+        existing.daysWorked += 1;
+        existing.regularHours += regularHours;
+        existing.overtimeHours += overtimeHours;
+        existing.totalHours += totalHours;
+        existing.regularPay += regularPay;
+        existing.overtimePay += overtimePay;
+        existing.totalPay += totalPay;
+        
+        // Track different overtime multipliers used
+        if (!existing.overtimeMultipliers.includes(overtimeMultiplier)) {
+          existing.overtimeMultipliers.push(overtimeMultiplier);
+        }
+      } else {
+        laborerMap.set(laborerId, {
+          laborerName: ts.laborer.name,
+          laborerId: ts.laborer.idNumber,
+          jobName: ts.job.name,
+          salaryRate: salaryRate,
+          daysWorked: 1,
+          regularHours: regularHours,
+          overtimeHours: overtimeHours,
+          totalHours: totalHours,
+          regularPay: regularPay,
+          overtimePay: overtimePay,
+          totalPay: totalPay,
+          overtimeMultipliers: [overtimeMultiplier]
+        });
+      }
     });
+
+    // Convert map to array
+    const reportData = Array.from(laborerMap.values()).map(item => ({
+      ...item,
+      overtimeMultiplier: item.overtimeMultipliers.length === 1 
+        ? item.overtimeMultipliers[0] 
+        : `${Math.min(...item.overtimeMultipliers)}-${Math.max(...item.overtimeMultipliers)}x`
+    }));
 
     // Calculate summary
     const summary = {
+      totalDaysWorked: reportData.reduce((sum, item) => sum + item.daysWorked, 0),
       totalRegularHours: reportData.reduce((sum, item) => sum + item.regularHours, 0),
       totalOvertimeHours: reportData.reduce((sum, item) => sum + item.overtimeHours, 0),
       totalHours: reportData.reduce((sum, item) => sum + item.totalHours, 0),
@@ -110,44 +142,78 @@ router.get('/client', async (req: AuthRequest, res, next) => {
         job: true
       },
       orderBy: [
-        { date: 'asc' },
         { laborer: { name: 'asc' } }
       ]
     });
 
-    const reportData = timesheets.map(ts => {
-      const regularCharge = Number(ts.hoursWorked) * Number(ts.laborer.orgRate);
-      const overtimeCharge = Number(ts.overtime) * Number(ts.laborer.orgRate) * Number(ts.overtimeMultiplier);
+    // Group by laborer and aggregate data
+    const laborerMap = new Map();
+    
+    timesheets.forEach(ts => {
+      const laborerId = ts.laborer.id;
+      const regularHours = Number(ts.hoursWorked);
+      const overtimeHours = Number(ts.overtime);
+      const overtimeMultiplier = Number(ts.overtimeMultiplier);
+      const salaryRate = Number(ts.laborer.salaryRate);
+      const orgRate = Number(ts.laborer.orgRate);
+      
+      const regularCharge = regularHours * orgRate;
+      const overtimeCharge = overtimeHours * orgRate * overtimeMultiplier;
       const totalCharge = regularCharge + overtimeCharge;
-      const totalHours = Number(ts.hoursWorked) + Number(ts.overtime);
-
-      // Calculate labor cost for profit calculation
-      const regularCost = Number(ts.hoursWorked) * Number(ts.laborer.salaryRate);
-      const overtimeCost = Number(ts.overtime) * Number(ts.laborer.salaryRate) * Number(ts.overtimeMultiplier);
+      
+      const regularCost = regularHours * salaryRate;
+      const overtimeCost = overtimeHours * salaryRate * overtimeMultiplier;
       const totalCost = regularCost + overtimeCost;
       const profit = totalCharge - totalCost;
+      const totalHours = regularHours + overtimeHours;
 
-      return {
-        date: ts.date,
-        laborerName: ts.laborer.name,
-        laborerId: ts.laborer.idNumber,
-        jobName: ts.job.name,
-        regularHours: Number(ts.hoursWorked),
-        overtimeHours: Number(ts.overtime),
-        overtimeMultiplier: Number(ts.overtimeMultiplier),
-        totalHours,
-        orgRate: Number(ts.laborer.orgRate),
-        regularCharge,
-        overtimeCharge,
-        totalCharge,
-        totalCost,
-        profit,
-        notes: ts.notes || ''
-      };
+      if (laborerMap.has(laborerId)) {
+        const existing = laborerMap.get(laborerId);
+        existing.daysWorked += 1;
+        existing.regularHours += regularHours;
+        existing.overtimeHours += overtimeHours;
+        existing.totalHours += totalHours;
+        existing.regularCharge += regularCharge;
+        existing.overtimeCharge += overtimeCharge;
+        existing.totalCharge += totalCharge;
+        existing.totalCost += totalCost;
+        existing.profit += profit;
+        
+        // Track different overtime multipliers used
+        if (!existing.overtimeMultipliers.includes(overtimeMultiplier)) {
+          existing.overtimeMultipliers.push(overtimeMultiplier);
+        }
+      } else {
+        laborerMap.set(laborerId, {
+          laborerName: ts.laborer.name,
+          laborerId: ts.laborer.idNumber,
+          jobName: ts.job.name,
+          orgRate: orgRate,
+          daysWorked: 1,
+          regularHours: regularHours,
+          overtimeHours: overtimeHours,
+          totalHours: totalHours,
+          regularCharge: regularCharge,
+          overtimeCharge: overtimeCharge,
+          totalCharge: totalCharge,
+          totalCost: totalCost,
+          profit: profit,
+          overtimeMultipliers: [overtimeMultiplier]
+        });
+      }
     });
+
+    // Convert map to array
+    const reportData = Array.from(laborerMap.values()).map(item => ({
+      ...item,
+      overtimeMultiplier: item.overtimeMultipliers.length === 1 
+        ? item.overtimeMultipliers[0] 
+        : `${Math.min(...item.overtimeMultipliers)}-${Math.max(...item.overtimeMultipliers)}x`
+    }));
 
     // Calculate summary
     const summary = {
+      totalDaysWorked: reportData.reduce((sum, item) => sum + item.daysWorked, 0),
       totalRegularHours: reportData.reduce((sum, item) => sum + item.regularHours, 0),
       totalOvertimeHours: reportData.reduce((sum, item) => sum + item.overtimeHours, 0),
       totalHours: reportData.reduce((sum, item) => sum + item.totalHours, 0),

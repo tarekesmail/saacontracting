@@ -3,6 +3,7 @@ import { useQuery } from 'react-query';
 import { api } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
+import SearchableSelect from '../components/SearchableSelect';
 import { 
   DocumentChartBarIcon,
   DocumentArrowDownIcon,
@@ -33,6 +34,12 @@ export default function ReportsPage() {
     const response = await api.get('/jobs');
     return response.data;
   });
+
+  // Prepare laborer options for searchable select
+  const laborerOptions = laborers?.map((laborer: any) => ({
+    value: laborer.id,
+    label: `${laborer.name} (${laborer.idNumber})`
+  })) || [];
 
   const { data: reportData, isLoading, refetch } = useQuery(
     ['reports', reportType, startDate, endDate, selectedLaborerId, selectedJobId],
@@ -91,36 +98,34 @@ export default function ReportsPage() {
     const csvData = reportData.data.map((item: any) => {
       if (reportType === 'labor') {
         return {
-          Date: new Date(item.date).toLocaleDateString(),
           'Laborer Name': item.laborerName,
           'ID Number': item.laborerId,
           Job: item.jobName,
-          'Regular Hours': item.regularHours,
-          'Overtime Hours': item.overtimeHours,
+          'Days Worked': item.daysWorked,
+          'Regular Hours': item.regularHours.toFixed(1),
+          'Overtime Hours': item.overtimeHours.toFixed(1),
           'OT Rate': `${item.overtimeMultiplier}x`,
-          'Total Hours': item.totalHours,
+          'Total Hours': item.totalHours.toFixed(1),
           'Salary Rate (SAR)': item.salaryRate,
           'Regular Pay (SAR)': item.regularPay.toFixed(2),
           'Overtime Pay (SAR)': item.overtimePay.toFixed(2),
-          'Total Pay (SAR)': item.totalPay.toFixed(2),
-          Notes: item.notes
+          'Total Pay (SAR)': item.totalPay.toFixed(2)
         };
       } else {
         return {
-          Date: new Date(item.date).toLocaleDateString(),
           'Laborer Name': item.laborerName,
           'ID Number': item.laborerId,
           Job: item.jobName,
-          'Regular Hours': item.regularHours,
-          'Overtime Hours': item.overtimeHours,
+          'Days Worked': item.daysWorked,
+          'Regular Hours': item.regularHours.toFixed(1),
+          'Overtime Hours': item.overtimeHours.toFixed(1),
           'OT Rate': `${item.overtimeMultiplier}x`,
-          'Total Hours': item.totalHours,
+          'Total Hours': item.totalHours.toFixed(1),
           'Org Rate (SAR)': item.orgRate,
           'Regular Charge (SAR)': item.regularCharge.toFixed(2),
           'Overtime Charge (SAR)': item.overtimeCharge.toFixed(2),
           'Total Charge (SAR)': item.totalCharge.toFixed(2),
-          'Profit (SAR)': item.profit.toFixed(2),
-          Notes: item.notes
+          'Profit (SAR)': item.profit.toFixed(2)
         };
       }
     });
@@ -181,18 +186,13 @@ export default function ReportsPage() {
 
           <div>
             <label className="label">Laborer (Optional)</label>
-            <select
+            <SearchableSelect
+              options={laborerOptions}
               value={selectedLaborerId}
-              onChange={(e) => setSelectedLaborerId(e.target.value)}
-              className="input"
-            >
-              <option value="">All Laborers</option>
-              {laborers?.map((laborer: any) => (
-                <option key={laborer.id} value={laborer.id}>
-                  {laborer.name}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedLaborerId}
+              placeholder="All Laborers"
+              className="w-full"
+            />
           </div>
 
           <div>
@@ -323,10 +323,10 @@ export default function ReportsPage() {
             <table className="table">
               <thead className="table-header">
                 <tr>
-                  <th className="table-header-cell">Date</th>
                   <th className="table-header-cell">Laborer</th>
                   <th className="table-header-cell">ID</th>
                   <th className="table-header-cell">Job</th>
+                  <th className="table-header-cell">Days Worked</th>
                   <th className="table-header-cell">Regular Hours</th>
                   <th className="table-header-cell">Overtime Hours</th>
                   <th className="table-header-cell">OT Rate</th>
@@ -347,22 +347,21 @@ export default function ReportsPage() {
                       <th className="table-header-cell">Profit</th>
                     </>
                   )}
-                  <th className="table-header-cell">Notes</th>
                 </tr>
               </thead>
               <tbody className="table-body">
                 {reportData.data.map((item: any, index: number) => (
                   <tr key={index}>
-                    <td className="table-cell">{new Date(item.date).toLocaleDateString()}</td>
                     <td className="table-cell font-medium">{item.laborerName}</td>
                     <td className="table-cell">{item.laborerId}</td>
                     <td className="table-cell">
                       <span className="badge badge-success">{item.jobName}</span>
                     </td>
-                    <td className="table-cell">{item.regularHours}</td>
-                    <td className="table-cell">{item.overtimeHours}</td>
+                    <td className="table-cell font-medium text-blue-600">{item.daysWorked}</td>
+                    <td className="table-cell">{item.regularHours.toFixed(1)}</td>
+                    <td className="table-cell">{item.overtimeHours.toFixed(1)}</td>
                     <td className="table-cell">{item.overtimeMultiplier}x</td>
-                    <td className="table-cell font-medium">{item.totalHours}</td>
+                    <td className="table-cell font-medium">{item.totalHours.toFixed(1)}</td>
                     {reportType === 'labor' ? (
                       <>
                         <td className="table-cell">{item.salaryRate} SAR</td>
@@ -379,7 +378,6 @@ export default function ReportsPage() {
                         <td className="table-cell font-bold text-yellow-600">{item.profit.toFixed(2)} SAR</td>
                       </>
                     )}
-                    <td className="table-cell text-sm">{item.notes}</td>
                   </tr>
                 ))}
               </tbody>

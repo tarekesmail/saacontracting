@@ -7,6 +7,7 @@ import { authRoutes } from './routes/auth';
 import { laborerRoutes } from './routes/laborers';
 import { jobRoutes } from './routes/jobs';
 import { timesheetRoutes } from './routes/timesheets';
+import { reportRoutes } from './routes/reports';
 import { errorHandler } from './middleware/errorHandler';
 import { authenticateToken, requireTenant } from './middleware/auth';
 
@@ -45,6 +46,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/laborers', authenticateToken, requireTenant, laborerRoutes);
 app.use('/api/jobs', authenticateToken, requireTenant, jobRoutes);
 app.use('/api/timesheets', authenticateToken, requireTenant, timesheetRoutes);
+app.use('/api/reports', authenticateToken, requireTenant, reportRoutes);
 
 // Favicon route
 app.get('/favicon.ico', (req, res) => {

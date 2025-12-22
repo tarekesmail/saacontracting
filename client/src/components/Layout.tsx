@@ -16,6 +16,7 @@ import {
   Cog6ToothIcon,
   ArrowPathIcon,
   ClockIcon,
+  DocumentChartBarIcon,
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -23,6 +24,7 @@ const navigation = [
   { name: 'Laborers', href: '/laborers', icon: UsersIcon },
   { name: 'Jobs', href: '/jobs', icon: BriefcaseIcon },
   { name: 'Timesheets', href: '/timesheets', icon: ClockIcon },
+  { name: 'Reports', href: '/reports', icon: DocumentChartBarIcon },
   { name: 'Tenants', href: '/tenants', icon: Cog6ToothIcon },
 ];
 

@@ -7,6 +7,7 @@ import DashboardPage from './pages/DashboardPage';
 import LaborersPage from './pages/LaborersPage';
 import JobsPage from './pages/JobsPage';
 import TimesheetsPage from './pages/TimesheetsPage';
+import ReportsPage from './pages/ReportsPage';
 import TenantsPage from './pages/TenantsPage';
 import LoadingSpinner from './components/LoadingSpinner';
 
@@ -47,6 +48,7 @@ function App() {
         <Route path="/laborers" element={<LaborersPage />} />
         <Route path="/jobs" element={<JobsPage />} />
         <Route path="/timesheets" element={<TimesheetsPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
         <Route path="/tenants" element={<TenantsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -259,10 +259,64 @@ router.get('/labor/excel', async (req: AuthRequest, res, next) => {
         job: true
       },
       orderBy: [
-        { date: 'asc' },
         { laborer: { name: 'asc' } }
       ]
     });
+
+    // Group by laborer and aggregate data (same logic as API endpoint)
+    const laborerMap = new Map();
+    
+    timesheets.forEach(ts => {
+      const laborerId = ts.laborer.id;
+      const regularHours = Number(ts.hoursWorked);
+      const overtimeHours = Number(ts.overtime);
+      const overtimeMultiplier = Number(ts.overtimeMultiplier);
+      const salaryRate = Number(ts.laborer.salaryRate);
+      
+      const regularPay = regularHours * salaryRate;
+      const overtimePay = overtimeHours * salaryRate * overtimeMultiplier;
+      const totalPay = regularPay + overtimePay;
+      const totalHours = regularHours + overtimeHours;
+
+      if (laborerMap.has(laborerId)) {
+        const existing = laborerMap.get(laborerId);
+        existing.daysWorked += 1;
+        existing.regularHours += regularHours;
+        existing.overtimeHours += overtimeHours;
+        existing.totalHours += totalHours;
+        existing.regularPay += regularPay;
+        existing.overtimePay += overtimePay;
+        existing.totalPay += totalPay;
+        
+        // Track different overtime multipliers used
+        if (!existing.overtimeMultipliers.includes(overtimeMultiplier)) {
+          existing.overtimeMultipliers.push(overtimeMultiplier);
+        }
+      } else {
+        laborerMap.set(laborerId, {
+          laborerName: ts.laborer.name,
+          laborerId: ts.laborer.idNumber,
+          jobName: ts.job.name,
+          salaryRate: salaryRate,
+          daysWorked: 1,
+          regularHours: regularHours,
+          overtimeHours: overtimeHours,
+          totalHours: totalHours,
+          regularPay: regularPay,
+          overtimePay: overtimePay,
+          totalPay: totalPay,
+          overtimeMultipliers: [overtimeMultiplier]
+        });
+      }
+    });
+
+    // Convert map to array
+    const aggregatedData = Array.from(laborerMap.values()).map(item => ({
+      ...item,
+      overtimeMultiplier: item.overtimeMultipliers.length === 1 
+        ? item.overtimeMultipliers[0] 
+        : `${Math.min(...item.overtimeMultipliers)}-${Math.max(...item.overtimeMultipliers)}`
+    }));
 
     // Create workbook
     const workbook = new ExcelJS.Workbook();
@@ -271,7 +325,7 @@ router.get('/labor/excel', async (req: AuthRequest, res, next) => {
     // Add title
     worksheet.mergeCells('A1:L1');
     const titleCell = worksheet.getCell('A1');
-    titleCell.value = 'SAA Contracting - Labor Report';
+    titleCell.value = 'SAA Contracting - Labor Report (Summary)';
     titleCell.font = { size: 16, bold: true };
     titleCell.alignment = { horizontal: 'center' };
 
@@ -284,9 +338,9 @@ router.get('/labor/excel', async (req: AuthRequest, res, next) => {
 
     // Add headers
     const headers = [
-      'Date', 'Laborer Name', 'ID Number', 'Job', 'Regular Hours', 'Overtime Hours', 
+      'Laborer Name', 'ID Number', 'Job', 'Days Worked', 'Regular Hours', 'Overtime Hours', 
       'OT Rate', 'Total Hours', 'Salary Rate (SAR)', 'Regular Pay (SAR)', 
-      'Overtime Pay (SAR)', 'Total Pay (SAR)', 'Notes'
+      'Overtime Pay (SAR)', 'Total Pay (SAR)'
     ];
     
     worksheet.addRow([]); // Empty row
@@ -298,43 +352,39 @@ router.get('/labor/excel', async (req: AuthRequest, res, next) => {
       fgColor: { argb: 'FFE0E0E0' }
     };
 
-    // Add data
+    // Add aggregated data
+    let totalDaysWorked = 0;
     let totalRegularHours = 0;
     let totalOvertimeHours = 0;
     let totalPay = 0;
 
-    timesheets.forEach(ts => {
-      const regularPay = Number(ts.hoursWorked) * Number(ts.laborer.salaryRate);
-      const overtimePay = Number(ts.overtime) * Number(ts.laborer.salaryRate) * Number(ts.overtimeMultiplier);
-      const totalPayAmount = regularPay + overtimePay;
-      const totalHours = Number(ts.hoursWorked) + Number(ts.overtime);
-
-      totalRegularHours += Number(ts.hoursWorked);
-      totalOvertimeHours += Number(ts.overtime);
-      totalPay += totalPayAmount;
+    aggregatedData.forEach(item => {
+      totalDaysWorked += item.daysWorked;
+      totalRegularHours += item.regularHours;
+      totalOvertimeHours += item.overtimeHours;
+      totalPay += item.totalPay;
 
       worksheet.addRow([
-        ts.date.toLocaleDateString(),
-        ts.laborer.name,
-        ts.laborer.idNumber,
-        ts.job.name,
-        Number(ts.hoursWorked),
-        Number(ts.overtime),
-        `${Number(ts.overtimeMultiplier)}x`,
-        totalHours,
-        Number(ts.laborer.salaryRate),
-        regularPay,
-        overtimePay,
-        totalPayAmount,
-        ts.notes || ''
+        item.laborerName,
+        item.laborerId,
+        item.jobName,
+        item.daysWorked,
+        Number(item.regularHours.toFixed(1)),
+        Number(item.overtimeHours.toFixed(1)),
+        `${item.overtimeMultiplier}x`,
+        Number(item.totalHours.toFixed(1)),
+        item.salaryRate,
+        Number(item.regularPay.toFixed(2)),
+        Number(item.overtimePay.toFixed(2)),
+        Number(item.totalPay.toFixed(2))
       ]);
     });
 
     // Add summary
     worksheet.addRow([]); // Empty row
     const summaryRow = worksheet.addRow([
-      'TOTAL', '', '', '', totalRegularHours, totalOvertimeHours, '', 
-      totalRegularHours + totalOvertimeHours, '', '', '', totalPay, ''
+      'TOTAL', '', '', totalDaysWorked, totalRegularHours.toFixed(1), totalOvertimeHours.toFixed(1), '', 
+      (totalRegularHours + totalOvertimeHours).toFixed(1), '', '', '', totalPay.toFixed(2)
     ]);
     summaryRow.font = { bold: true };
     summaryRow.fill = {
@@ -350,7 +400,7 @@ router.get('/labor/excel', async (req: AuthRequest, res, next) => {
 
     // Set response headers
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename=labor-report-${startDate}-${endDate}.xlsx`);
+    res.setHeader('Content-Disposition', `attachment; filename=labor-report-summary-${startDate}-${endDate}.xlsx`);
 
     // Write to response
     await workbook.xlsx.write(res);
@@ -383,10 +433,74 @@ router.get('/client/excel', async (req: AuthRequest, res, next) => {
         job: true
       },
       orderBy: [
-        { date: 'asc' },
         { laborer: { name: 'asc' } }
       ]
     });
+
+    // Group by laborer and aggregate data (same logic as API endpoint)
+    const laborerMap = new Map();
+    
+    timesheets.forEach(ts => {
+      const laborerId = ts.laborer.id;
+      const regularHours = Number(ts.hoursWorked);
+      const overtimeHours = Number(ts.overtime);
+      const overtimeMultiplier = Number(ts.overtimeMultiplier);
+      const salaryRate = Number(ts.laborer.salaryRate);
+      const orgRate = Number(ts.laborer.orgRate);
+      
+      const regularCharge = regularHours * orgRate;
+      const overtimeCharge = overtimeHours * orgRate * overtimeMultiplier;
+      const totalCharge = regularCharge + overtimeCharge;
+      
+      const regularCost = regularHours * salaryRate;
+      const overtimeCost = overtimeHours * salaryRate * overtimeMultiplier;
+      const totalCost = regularCost + overtimeCost;
+      const profit = totalCharge - totalCost;
+      const totalHours = regularHours + overtimeHours;
+
+      if (laborerMap.has(laborerId)) {
+        const existing = laborerMap.get(laborerId);
+        existing.daysWorked += 1;
+        existing.regularHours += regularHours;
+        existing.overtimeHours += overtimeHours;
+        existing.totalHours += totalHours;
+        existing.regularCharge += regularCharge;
+        existing.overtimeCharge += overtimeCharge;
+        existing.totalCharge += totalCharge;
+        existing.totalCost += totalCost;
+        existing.profit += profit;
+        
+        // Track different overtime multipliers used
+        if (!existing.overtimeMultipliers.includes(overtimeMultiplier)) {
+          existing.overtimeMultipliers.push(overtimeMultiplier);
+        }
+      } else {
+        laborerMap.set(laborerId, {
+          laborerName: ts.laborer.name,
+          laborerId: ts.laborer.idNumber,
+          jobName: ts.job.name,
+          orgRate: orgRate,
+          daysWorked: 1,
+          regularHours: regularHours,
+          overtimeHours: overtimeHours,
+          totalHours: totalHours,
+          regularCharge: regularCharge,
+          overtimeCharge: overtimeCharge,
+          totalCharge: totalCharge,
+          totalCost: totalCost,
+          profit: profit,
+          overtimeMultipliers: [overtimeMultiplier]
+        });
+      }
+    });
+
+    // Convert map to array
+    const aggregatedData = Array.from(laborerMap.values()).map(item => ({
+      ...item,
+      overtimeMultiplier: item.overtimeMultipliers.length === 1 
+        ? item.overtimeMultipliers[0] 
+        : `${Math.min(...item.overtimeMultipliers)}-${Math.max(...item.overtimeMultipliers)}`
+    }));
 
     // Create workbook
     const workbook = new ExcelJS.Workbook();
@@ -395,7 +509,7 @@ router.get('/client/excel', async (req: AuthRequest, res, next) => {
     // Add title
     worksheet.mergeCells('A1:M1');
     const titleCell = worksheet.getCell('A1');
-    titleCell.value = 'SAA Contracting - Client Billing Report';
+    titleCell.value = 'SAA Contracting - Client Billing Report (Summary)';
     titleCell.font = { size: 16, bold: true };
     titleCell.alignment = { horizontal: 'center' };
 
@@ -408,9 +522,9 @@ router.get('/client/excel', async (req: AuthRequest, res, next) => {
 
     // Add headers
     const headers = [
-      'Date', 'Laborer Name', 'ID Number', 'Job', 'Regular Hours', 'Overtime Hours', 
+      'Laborer Name', 'ID Number', 'Job', 'Days Worked', 'Regular Hours', 'Overtime Hours', 
       'OT Rate', 'Total Hours', 'Org Rate (SAR)', 'Regular Charge (SAR)', 
-      'Overtime Charge (SAR)', 'Total Charge (SAR)', 'Profit (SAR)', 'Notes'
+      'Overtime Charge (SAR)', 'Total Charge (SAR)', 'Profit (SAR)'
     ];
     
     worksheet.addRow([]); // Empty row
@@ -422,52 +536,42 @@ router.get('/client/excel', async (req: AuthRequest, res, next) => {
       fgColor: { argb: 'FFE0E0E0' }
     };
 
-    // Add data
+    // Add aggregated data
+    let totalDaysWorked = 0;
     let totalRegularHours = 0;
     let totalOvertimeHours = 0;
     let totalCharge = 0;
     let totalProfit = 0;
 
-    timesheets.forEach(ts => {
-      const regularCharge = Number(ts.hoursWorked) * Number(ts.laborer.orgRate);
-      const overtimeCharge = Number(ts.overtime) * Number(ts.laborer.orgRate) * Number(ts.overtimeMultiplier);
-      const totalChargeAmount = regularCharge + overtimeCharge;
-      const totalHours = Number(ts.hoursWorked) + Number(ts.overtime);
-
-      // Calculate cost for profit
-      const regularCost = Number(ts.hoursWorked) * Number(ts.laborer.salaryRate);
-      const overtimeCost = Number(ts.overtime) * Number(ts.laborer.salaryRate) * Number(ts.overtimeMultiplier);
-      const totalCost = regularCost + overtimeCost;
-      const profit = totalChargeAmount - totalCost;
-
-      totalRegularHours += Number(ts.hoursWorked);
-      totalOvertimeHours += Number(ts.overtime);
-      totalCharge += totalChargeAmount;
-      totalProfit += profit;
+    aggregatedData.forEach(item => {
+      totalDaysWorked += item.daysWorked;
+      totalRegularHours += item.regularHours;
+      totalOvertimeHours += item.overtimeHours;
+      totalCharge += item.totalCharge;
+      totalProfit += item.profit;
 
       worksheet.addRow([
-        ts.date.toLocaleDateString(),
-        ts.laborer.name,
-        ts.laborer.idNumber,
-        ts.job.name,
-        Number(ts.hoursWorked),
-        Number(ts.overtime),
-        `${Number(ts.overtimeMultiplier)}x`,
-        totalHours,
-        Number(ts.laborer.orgRate),
-        regularCharge,
-        overtimeCharge,
-        totalChargeAmount,
-        profit,
-        ts.notes || ''
+        item.laborerName,
+        item.laborerId,
+        item.jobName,
+        item.daysWorked,
+        Number(item.regularHours.toFixed(1)),
+        Number(item.overtimeHours.toFixed(1)),
+        `${item.overtimeMultiplier}x`,
+        Number(item.totalHours.toFixed(1)),
+        item.orgRate,
+        Number(item.regularCharge.toFixed(2)),
+        Number(item.overtimeCharge.toFixed(2)),
+        Number(item.totalCharge.toFixed(2)),
+        Number(item.profit.toFixed(2))
       ]);
     });
 
     // Add summary
     worksheet.addRow([]); // Empty row
     const summaryRow = worksheet.addRow([
-      'TOTAL', '', '', '', totalRegularHours, totalOvertimeHours, '', 
-      totalRegularHours + totalOvertimeHours, '', '', '', totalCharge, totalProfit, ''
+      'TOTAL', '', '', totalDaysWorked, totalRegularHours.toFixed(1), totalOvertimeHours.toFixed(1), '', 
+      (totalRegularHours + totalOvertimeHours).toFixed(1), '', '', '', totalCharge.toFixed(2), totalProfit.toFixed(2)
     ]);
     summaryRow.font = { bold: true };
     summaryRow.fill = {
@@ -483,7 +587,7 @@ router.get('/client/excel', async (req: AuthRequest, res, next) => {
 
     // Set response headers
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename=client-report-${startDate}-${endDate}.xlsx`);
+    res.setHeader('Content-Disposition', `attachment; filename=client-report-summary-${startDate}-${endDate}.xlsx`);
 
     // Write to response
     await workbook.xlsx.write(res);

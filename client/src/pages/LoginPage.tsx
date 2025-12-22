@@ -1,21 +1,33 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '../contexts/AuthContext';
+import { api } from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import toast from 'react-hot-toast';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Username is required'),
   password: z.string().min(1, 'Password is required'),
+  tenantId: z.string().optional(),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
 
+interface Tenant {
+  id: string;
+  name: string;
+  domain: string;
+}
+
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [loadingTenants, setLoadingTenants] = useState(true);
+  const [showCreateTenant, setShowCreateTenant] = useState(false);
+  const [creatingTenant, setCreatingTenant] = useState(false);
   const { login } = useAuth();
 
   const {
@@ -26,10 +38,44 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
+  // Fetch available tenants on component mount
+  useEffect(() => {
+    const fetchTenants = async () => {
+      try {
+        const response = await api.get('/auth/tenants');
+        setTenants(response.data);
+      } catch (error) {
+        console.error('Failed to fetch tenants:', error);
+        toast.error('Failed to load tenants');
+      } finally {
+        setLoadingTenants(false);
+      }
+    };
+
+    fetchTenants();
+  }, []);
+
+  const createTenant = async (name: string, domain: string) => {
+    setCreatingTenant(true);
+    try {
+      const response = await api.post('/auth/tenants', { name, domain });
+      const newTenant = response.data;
+      setTenants([...tenants, newTenant]);
+      toast.success('Tenant created successfully!');
+      setShowCreateTenant(false);
+      return newTenant;
+    } catch (error) {
+      toast.error('Failed to create tenant');
+      throw error;
+    } finally {
+      setCreatingTenant(false);
+    }
+  };
+
   const onSubmit = async (data: LoginForm) => {
     setLoading(true);
     try {
-      await login(data.username, data.password);
+      await login(data.username, data.password, data.tenantId);
       toast.success('Welcome to SAA Contracting!');
     } catch (error) {
       // Error is handled by the API interceptor
@@ -80,6 +126,33 @@ export default function LoginPage() {
                 <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
               )}
             </div>
+
+            <div>
+              <label htmlFor="tenantId" className="label">
+                Select Tenant (Optional)
+              </label>
+              {loadingTenants ? (
+                <div className="flex items-center justify-center py-2">
+                  <LoadingSpinner size="sm" />
+                  <span className="ml-2 text-sm text-gray-500">Loading tenants...</span>
+                </div>
+              ) : (
+                <select
+                  {...register('tenantId')}
+                  className="input"
+                >
+                  <option value="">No tenant selected</option>
+                  {tenants.map((tenant) => (
+                    <option key={tenant.id} value={tenant.id}>
+                      {tenant.name} ({tenant.domain})
+                    </option>
+                  ))}
+                </select>
+              )}
+              {errors.tenantId && (
+                <p className="mt-1 text-sm text-red-600">{errors.tenantId.message}</p>
+              )}
+            </div>
           </div>
 
           <div>
@@ -99,7 +172,126 @@ export default function LoginPage() {
             </button>
           </div>
         </form>
+
+        {/* Create Tenant Section */}
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-gray-50 text-gray-500">Or</span>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            {!showCreateTenant ? (
+              <button
+                type="button"
+                onClick={() => setShowCreateTenant(true)}
+                className="w-full text-center text-sm text-primary-600 hover:text-primary-500"
+              >
+                Create a new tenant
+              </button>
+            ) : (
+              <CreateTenantForm
+                onSubmit={createTenant}
+                onCancel={() => setShowCreateTenant(false)}
+                loading={creatingTenant}
+              />
+            )}
+          </div>
+        </div>
       </div>
+    </div>
+  );
+}
+
+// Create Tenant Form Component
+interface CreateTenantFormProps {
+  onSubmit: (name: string, domain: string) => Promise<any>;
+  onCancel: () => void;
+  loading: boolean;
+}
+
+const createTenantSchema = z.object({
+  name: z.string().min(1, 'Tenant name is required'),
+  domain: z.string().min(1, 'Domain is required'),
+});
+
+type CreateTenantForm = z.infer<typeof createTenantSchema>;
+
+function CreateTenantForm({ onSubmit, onCancel, loading }: CreateTenantFormProps) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<CreateTenantForm>({
+    resolver: zodResolver(createTenantSchema),
+  });
+
+  const handleFormSubmit = async (data: CreateTenantForm) => {
+    try {
+      await onSubmit(data.name, data.domain);
+    } catch (error) {
+      // Error handling is done in the parent component
+    }
+  };
+
+  return (
+    <div className="space-y-4 p-4 border border-gray-200 rounded-lg bg-white">
+      <h3 className="text-lg font-medium text-gray-900">Create New Tenant</h3>
+      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+        <div>
+          <label className="label">Tenant Name</label>
+          <input
+            {...register('name')}
+            type="text"
+            className="input"
+            placeholder="e.g., Main Office, Branch 1"
+          />
+          {errors.name && (
+            <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="label">Domain</label>
+          <input
+            {...register('domain')}
+            type="text"
+            className="input"
+            placeholder="e.g., main, branch1"
+          />
+          {errors.domain && (
+            <p className="mt-1 text-sm text-red-600">{errors.domain.message}</p>
+          )}
+        </div>
+
+        <div className="flex space-x-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="btn-secondary flex-1"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary flex-1"
+          >
+            {loading ? (
+              <>
+                <LoadingSpinner size="sm" className="mr-2" />
+                Creating...
+              </>
+            ) : (
+              'Create Tenant'
+            )}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

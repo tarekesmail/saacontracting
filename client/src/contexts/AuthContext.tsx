@@ -13,7 +13,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string, tenantId?: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -27,17 +27,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const token = localStorage.getItem('token');
     if (token) {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      // For now, just set loading to false since we have a simple auth system
-      setLoading(false);
-    } else {
-      setLoading(false);
+      // Try to get user info from token
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        // For now, we'll just set a basic user object
+        // In a real app, you might want to validate the token with the server
+        setUser({
+          username: payload.username,
+          tenant: null // Will be set when tenant is selected
+        });
+      } catch (error) {
+        console.error('Invalid token:', error);
+        localStorage.removeItem('token');
+        delete api.defaults.headers.common['Authorization'];
+      }
     }
+    setLoading(false);
   }, []);
 
-  const login = async (username: string, password: string) => {
+  const login = async (username: string, password: string, tenantId?: string) => {
     const response = await api.post('/auth/login', {
       username,
       password,
+      tenantId,
     });
 
     const { token, user } = response.data;

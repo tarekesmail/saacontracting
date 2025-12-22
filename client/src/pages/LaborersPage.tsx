@@ -29,8 +29,9 @@ export default function LaborersPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const canEdit = user?.role === 'ADMIN' || user?.role === 'EDITOR';
-  const canDelete = user?.role === 'ADMIN';
+  // Since we have a single admin login, all authenticated users can edit and delete
+  const canEdit = true;
+  const canDelete = true;
 
   const { data: laborersData, isLoading } = useQuery(
     ['laborers', currentPage, searchTerm],
@@ -326,7 +327,7 @@ export default function LaborersPage() {
                     <option value="">Select a job</option>
                     {availableJobs.map((job: any) => (
                       <option key={job.id} value={job.id}>
-                        {job.name} (${job.pricePerHour}/hr)
+                        {job.name} ({job.pricePerHour} SAR/hr)
                       </option>
                     ))}
                   </select>

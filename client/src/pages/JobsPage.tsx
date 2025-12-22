@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { api } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { PlusIcon, PencilIcon, TrashIcon, BriefcaseIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilIcon, TrashIcon, BriefcaseIcon, BanknotesIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
 const jobSchema = z.object({
@@ -24,8 +24,9 @@ export default function JobsPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const canEdit = user?.role === 'ADMIN' || user?.role === 'EDITOR';
-  const canDelete = user?.role === 'ADMIN';
+  // Since we have a single admin login, all authenticated users can edit and delete
+  const canEdit = true;
+  const canDelete = true;
 
   const { data: jobs, isLoading } = useQuery(['jobs', selectedGroup], async () => {
     const params = selectedGroup ? `?groupId=${selectedGroup}` : '';
@@ -192,11 +193,11 @@ export default function JobsPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center text-sm text-gray-500">
-                  <CurrencyDollarIcon className="h-4 w-4 mr-1" />
+                  <BanknotesIcon className="h-4 w-4 mr-1" />
                   Hourly Rate
                 </div>
                 <span className="text-lg font-bold text-green-600">
-                  ${parseFloat(job.pricePerHour).toFixed(2)}
+                  {parseFloat(job.pricePerHour).toFixed(2)} SAR
                 </span>
               </div>
               
@@ -255,7 +256,7 @@ export default function JobsPage() {
                 </div>
 
                 <div>
-                  <label className="label">Price Per Hour ($)</label>
+                  <label className="label">Price Per Hour (SAR)</label>
                   <input
                     {...register('pricePerHour', { valueAsNumber: true })}
                     type="number"

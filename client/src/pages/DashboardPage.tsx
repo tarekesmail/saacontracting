@@ -1,9 +1,12 @@
 import { useQuery } from 'react-query';
 import { api } from '../lib/api';
-import { UsersIcon, UserGroupIcon, BriefcaseIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { useAuth } from '../contexts/AuthContext';
+import { UsersIcon, UserGroupIcon, BriefcaseIcon, ClockIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+  
   const { data: stats, isLoading } = useQuery('dashboard-stats', async () => {
     const [laborers, groups, jobs] = await Promise.all([
       api.get('/laborers?limit=1'),
@@ -66,10 +69,23 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Overview of your labor management system
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Overview of your labor management system
+            </p>
+          </div>
+          {user?.tenant && (
+            <div className="flex items-center space-x-2 px-4 py-2 bg-primary-50 rounded-lg">
+              <BuildingOfficeIcon className="h-5 w-5 text-primary-600" />
+              <div className="text-sm">
+                <p className="font-medium text-primary-900">{user.tenant.name}</p>
+                <p className="text-primary-600">{user.tenant.domain}</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Stats Grid */}

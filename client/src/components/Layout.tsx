@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   HomeIcon,
@@ -9,6 +9,8 @@ import {
   ArrowRightOnRectangleIcon,
   Bars3Icon,
   XMarkIcon,
+  BuildingOfficeIcon,
+  ChevronDownIcon,
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -22,6 +24,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const switchTenant = () => {
+    navigate('/tenant-selection');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -102,12 +109,31 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <div className="flex flex-1" />
             <div className="flex items-center gap-x-4 lg:gap-x-6">
               <div className="flex items-center space-x-4">
+                {/* Tenant Info with Switch Button */}
+                {user?.tenant && (
+                  <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 px-3 py-1 bg-primary-50 rounded-lg">
+                      <BuildingOfficeIcon className="h-4 w-4 text-primary-600" />
+                      <div className="text-sm">
+                        <p className="font-medium text-primary-900">{user.tenant.name}</p>
+                      </div>
+                      <button
+                        onClick={switchTenant}
+                        className="text-primary-600 hover:text-primary-800 transition-colors"
+                        title="Switch Tenant"
+                      >
+                        <ChevronDownIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
+                {/* User Info */}
                 <div className="text-sm">
                   <p className="font-medium text-gray-900">{user?.username}</p>
-                  {user?.tenant && (
-                    <p className="text-gray-500">{user.tenant.name}</p>
-                  )}
                 </div>
+                
+                {/* Logout Button */}
                 <button
                   onClick={logout}
                   className="text-gray-400 hover:text-gray-600 transition-colors"

@@ -21,8 +21,9 @@ export default function GroupsPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const canEdit = user?.role === 'ADMIN' || user?.role === 'EDITOR';
-  const canDelete = user?.role === 'ADMIN';
+  // Since we have a single admin login, all authenticated users can edit and delete
+  const canEdit = true;
+  const canDelete = true;
 
   const { data: groups, isLoading } = useQuery('groups', async () => {
     const response = await api.get('/groups');

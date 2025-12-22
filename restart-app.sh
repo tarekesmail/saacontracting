@@ -19,7 +19,7 @@ if curl -f http://localhost:3000 > /dev/null 2>&1; then
     echo "🔐 Login: admin / saacontracting2024"
 else
     echo "⚠️ Application might not be fully ready yet, checking logs..."
-    docker logs saa-contracting-app --tail 10
+    docker logs saa_contracting_app --tail 10
 fi
 
 echo ""

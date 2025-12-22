@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  # Application
+  app:
+    build: .
+    container_name: saa_contracting_app
+    environment:
+      DATABASE_URL: "postgresql://postgres:mysecretpassword@host.docker.internal:5432/saa_contracting"
+      JWT_SECRET: "saa-contracting-jwt-secret-key-change-in-production"
+      NODE_ENV: "production"
+      PORT: 3000
+    ports:
+      - "80:3000"  # Expose on port 80 for public access
+      - "443:3000" # Also expose on 443 for HTTPS (you'll need SSL setup)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./prisma:/app/prisma
+    restart: unless-stopped
+    command: >
+      sh -c "
+        npx prisma migrate deploy &&
+        node dist/server/index.js
+      "
+
+# Using external postgres container
+networks:
+  default:
+    external: true
+    name: bridge

@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  domain    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users       User[]
+  laborers    Laborer[]
+  laborGroups LaborGroup[]
+
+  @@map("tenants")
+}
+
+model User {
+  id       String   @id @default(cuid())
+  email    String   @unique
+  password String
+  name     String
+  role     UserRole @default(READ_ONLY)
+  tenantId String
+  isActive Boolean  @default(true)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Laborer {
+  id          String    @id @default(cuid())
+  name        String
+  idNumber    String
+  phoneNumber String
+  email       String?
+  startDate   DateTime
+  tenantId    String
+  groupId     String?
+  jobId       String?
+  isActive    Boolean   @default(true)
+
+  tenant Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  group  LaborGroup? @relation(fields: [groupId], references: [id])
+  job    Job?        @relation(fields: [jobId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, idNumber])
+  @@map("laborers")
+}
+
+model LaborGroup {
+  id       String  @id @default(cuid())
+  name     String
+  tenantId String
+  isActive Boolean @default(true)
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  jobs     Job[]
+  laborers Laborer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, name])
+  @@map("labor_groups")
+}
+
+model Job {
+  id           String  @id @default(cuid())
+  name         String
+  pricePerHour Decimal @db.Decimal(10, 2)
+  groupId      String
+  isActive     Boolean @default(true)
+
+  group    LaborGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  laborers Laborer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([groupId, name])
+  @@map("jobs")
+}
+
+enum UserRole {
+  ADMIN
+  EDITOR
+  READ_ONLY
+}

@@ -4,7 +4,7 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 
 # Install OpenSSL for Prisma
-RUN apk add --no-cache openssl1.1-compat
+RUN apk add --no-cache openssl
 
 # Copy package files
 COPY package*.json ./
@@ -29,7 +29,7 @@ WORKDIR /app
 # Install required system dependencies
 RUN apk add --no-cache \
     dumb-init \
-    openssl1.1-compat \
+    openssl \
     libc6-compat
 
 # Create non-root user

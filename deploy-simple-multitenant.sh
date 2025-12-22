@@ -10,14 +10,14 @@ docker rm saa-contracting-app 2>/dev/null || true
 
 # Check if database exists and handle migration
 echo "🗄️  Checking database..."
-DB_EXISTS=$(docker exec some-postgres psql -U postgres -lqt | cut -d \| -f 1 | grep -w saa_contracting | wc -l)
+DB_EXISTS=$(docker exec saa-contracting-postgres psql -U postgres -lqt | cut -d \| -f 1 | grep -w saa_contracting | wc -l)
 
 if [ $DB_EXISTS -eq 1 ]; then
     echo "📊 Database exists - running migrations..."
     # Keep existing database and run migrations
 else
     echo "🆕 Creating new database..."
-    docker exec -it some-postgres createdb -U postgres saa_contracting
+    docker exec -it saa-contracting-postgres createdb -U postgres saa_contracting
 fi
 
 # Build the application

@@ -12,7 +12,7 @@ docker stop saa-contracting-app 2>/dev/null || true
 
 # Backup database
 echo "💾 Creating database backup..."
-docker exec some-postgres pg_dump -U postgres saa_contracting > saa_contracting_backup_$(date +%Y%m%d_%H%M%S).sql
+docker exec saa-contracting-postgres pg_dump -U postgres saa_contracting > saa_contracting_backup_$(date +%Y%m%d_%H%M%S).sql
 echo "✅ Backup created: saa_contracting_backup_$(date +%Y%m%d_%H%M%S).sql"
 
 # Build new application
@@ -24,7 +24,7 @@ echo "📊 Running schema migrations..."
 echo "🔧 Step 1: Remove groups and add dual pricing..."
 
 # Apply the migration SQL
-docker exec -i some-postgres psql -U postgres saa_contracting << 'EOF'
+docker exec -i saa-contracting-postgres psql -U postgres saa_contracting << 'EOF'
 -- Remove groups migration
 BEGIN;
 

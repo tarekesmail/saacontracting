@@ -52,7 +52,7 @@ docker exec -it some-postgres psql -U ${DB_USER} -c "CREATE DATABASE ${DB_NAME};
 
 # Build the application
 echo "🔨 Building application..."
-docker build -t saa-contracting-app .
+docker build -f Dockerfile.debian -t saa-contracting-app .
 
 # Stop existing container if running
 docker stop saa-contracting-app 2>/dev/null || true

@@ -3,7 +3,9 @@ version: '3.8'
 services:
   # Application
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.debian
     container_name: saa_contracting_app
     environment:
       DATABASE_URL: "postgresql://postgres:mysecretpassword@host.docker.internal:5432/saa_contracting"

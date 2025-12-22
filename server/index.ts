@@ -8,6 +8,7 @@ import { laborerRoutes } from './routes/laborers';
 import { jobRoutes } from './routes/jobs';
 import { timesheetRoutes } from './routes/timesheets';
 import { reportRoutes } from './routes/reports';
+import { publicRoutes } from './routes/public';
 import { errorHandler } from './middleware/errorHandler';
 import { authenticateToken, requireTenant } from './middleware/auth';
 
@@ -43,6 +44,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/public', publicRoutes); // Public routes (no auth required)
 app.use('/api/laborers', authenticateToken, requireTenant, laborerRoutes);
 app.use('/api/jobs', authenticateToken, requireTenant, jobRoutes);
 app.use('/api/timesheets', authenticateToken, requireTenant, timesheetRoutes);

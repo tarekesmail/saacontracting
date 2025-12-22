@@ -4,6 +4,10 @@
 
 echo "🚀 Deploying SAA Contracting (Simple Multi-tenant with Dual Pricing)..."
 
+# Pull latest code from git
+echo "📥 Pulling latest code..."
+git pull origin main
+
 # Stop and remove existing containers
 docker stop saa-contracting-app 2>/dev/null || true
 docker rm saa-contracting-app 2>/dev/null || true

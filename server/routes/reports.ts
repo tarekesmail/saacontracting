@@ -11,7 +11,8 @@ const reportQuerySchema = z.object({
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().min(1, 'End date is required'),
   laborerId: z.string().optional(),
-  jobId: z.string().optional()
+  jobId: z.string().optional(),
+  categoryId: z.string().optional()
 });
 
 // Get labor report data (using salary rates)

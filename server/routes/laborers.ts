@@ -27,9 +27,9 @@ router.get('/', async (req: AuthRequest, res, next) => {
       isActive: true,
       ...(search && {
         OR: [
-          { name: { contains: search as string, mode: 'insensitive' } },
-          { idNumber: { contains: search as string, mode: 'insensitive' } },
-          { email: { contains: search as string, mode: 'insensitive' } }
+          { name: { contains: search as string, mode: 'insensitive' as const } },
+          { idNumber: { contains: search as string, mode: 'insensitive' as const } },
+          { email: { contains: search as string, mode: 'insensitive' as const } }
         ]
       })
     };

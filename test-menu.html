@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SAA Contracting - Menu Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .menu-item { padding: 10px; margin: 5px 0; background: #f0f0f0; border-radius: 5px; }
+        .dropdown { margin-left: 20px; background: #e0e0e0; }
+        .highlight { background: #4CAF50; color: white; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>SAA Contracting - Expected Menu Structure</h1>
+    <p>After deployment, your navigation menu should look like this:</p>
+    
+    <div class="menu-item">📊 Dashboard</div>
+    <div class="menu-item">👥 Laborers</div>
+    <div class="menu-item">💼 Jobs</div>
+    <div class="menu-item">⏰ Timesheets</div>
+    
+    <div class="menu-item">💰 Expenses ▼
+        <div class="dropdown">• Manage Expenses</div>
+        <div class="dropdown">• Categories</div>
+        <div class="dropdown">• Expense Reports</div>
+    </div>
+    
+    <div class="menu-item highlight">📈 Reports ▼
+        <div class="dropdown">• Labor Reports</div>
+        <div class="dropdown highlight">• P&L Report ← HERE!</div>
+    </div>
+    
+    <div class="menu-item">🏢 Tenants</div>
+    
+    <hr>
+    <h2>How to Access P&L Report:</h2>
+    <ol>
+        <li><strong>Click on "Reports"</strong> in the main menu</li>
+        <li><strong>Click on "P&L Report"</strong> from the dropdown</li>
+        <li>Or go directly to: <code>http://localhost:3000/profit-loss</code></li>
+    </ol>
+    
+    <h2>If you still don't see it:</h2>
+    <ol>
+        <li>Clear browser cache (Ctrl+F5 or Cmd+Shift+R)</li>
+        <li>Try incognito/private browsing mode</li>
+        <li>Run: <code>./quick-deploy.sh</code></li>
+        <li>Check browser console for errors (F12)</li>
+    </ol>
+</body>
+</html>

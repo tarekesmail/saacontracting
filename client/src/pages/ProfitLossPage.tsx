@@ -6,8 +6,8 @@ import {
   DocumentChartBarIcon,
   DocumentArrowDownIcon,
   CurrencyDollarIcon,
-  TrendingUpIcon,
-  TrendingDownIcon,
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
   BanknotesIcon,
   ReceiptPercentIcon,
   ChartBarIcon,
@@ -202,9 +202,9 @@ export default function ProfitLossPage() {
           <div className="card p-6">
             <div className="flex items-center">
               {reportData.summary.netProfit >= 0 ? (
-                <TrendingUpIcon className="h-8 w-8 text-green-600" />
+                <ArrowTrendingUpIcon className="h-8 w-8 text-green-600" />
               ) : (
-                <TrendingDownIcon className="h-8 w-8 text-red-600" />
+                <ArrowTrendingDownIcon className="h-8 w-8 text-red-600" />
               )}
               <div className="ml-4">
                 <div className={`text-2xl font-bold ${

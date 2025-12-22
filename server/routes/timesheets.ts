@@ -10,6 +10,7 @@ const timesheetSchema = z.object({
   date: z.string().transform((str) => new Date(str)),
   hoursWorked: z.number().min(0).max(24),
   overtime: z.number().min(0).max(24).default(0),
+  overtimeMultiplier: z.number().min(1).max(5).default(1.5), // 1x to 5x multiplier
   notes: z.string().optional(),
   laborerId: z.string().min(1),
   jobId: z.string().min(1)
@@ -17,11 +18,13 @@ const timesheetSchema = z.object({
 
 const bulkTimesheetSchema = z.object({
   date: z.string().transform((str) => new Date(str)),
+  defaultOvertimeMultiplier: z.number().min(1).max(5).default(1.5), // Default multiplier for all
   timesheets: z.array(z.object({
     laborerId: z.string().min(1),
     jobId: z.string().min(1),
     hoursWorked: z.number().min(0).max(24),
     overtime: z.number().min(0).max(24).default(0),
+    overtimeMultiplier: z.number().min(1).max(5).optional(), // Individual multiplier (overrides default)
     notes: z.string().optional()
   }))
 });
@@ -104,7 +107,7 @@ router.get('/summary', async (req: AuthRequest, res, next) => {
       }
     });
 
-    // Get laborer details
+    // Get laborer details with average overtime multiplier
     const laborerIds = summary.map(s => s.laborerId);
     const laborers = await prisma.laborer.findMany({
       where: {
@@ -116,18 +119,35 @@ router.get('/summary', async (req: AuthRequest, res, next) => {
       }
     });
 
+    // Get overtime multipliers for each laborer in the date range
+    const overtimeMultipliers = await prisma.timesheet.groupBy({
+      by: ['laborerId'],
+      where: {
+        tenantId: req.user!.tenantId!,
+        date: {
+          gte: new Date(startDate as string),
+          lte: new Date(endDate as string)
+        },
+        overtime: { gt: 0 }
+      },
+      _avg: {
+        overtimeMultiplier: true
+      }
+    });
+
     const summaryWithDetails = summary.map(s => {
       const laborer = laborers.find(l => l.id === s.laborerId);
+      const overtimeMultiplier = overtimeMultipliers.find(om => om.laborerId === s.laborerId)?._avg.overtimeMultiplier || 1.5;
       const regularHours = Number(s._sum.hoursWorked || 0);
       const overtimeHours = Number(s._sum.overtime || 0);
       const totalHours = regularHours + overtimeHours;
       
       const regularPay = regularHours * Number(laborer?.salaryRate || 0);
-      const overtimePay = overtimeHours * Number(laborer?.salaryRate || 0) * 1.5; // 1.5x for overtime
+      const overtimePay = overtimeHours * Number(laborer?.salaryRate || 0) * Number(overtimeMultiplier);
       const totalPay = regularPay + overtimePay;
       
       const regularCharge = regularHours * Number(laborer?.orgRate || 0);
-      const overtimeCharge = overtimeHours * Number(laborer?.orgRate || 0) * 1.5;
+      const overtimeCharge = overtimeHours * Number(laborer?.orgRate || 0) * Number(overtimeMultiplier);
       const totalCharge = regularCharge + overtimeCharge;
 
       return {
@@ -137,6 +157,7 @@ router.get('/summary', async (req: AuthRequest, res, next) => {
           regularHours,
           overtimeHours,
           totalHours,
+          overtimeMultiplier: Number(overtimeMultiplier),
           regularPay,
           overtimePay,
           totalPay,
@@ -227,6 +248,8 @@ router.post('/bulk', async (req: AuthRequest, res, next) => {
       const timesheets = [];
       
       for (const timesheetData of data.timesheets) {
+        const overtimeMultiplier = timesheetData.overtimeMultiplier || data.defaultOvertimeMultiplier;
+        
         const timesheet = await tx.timesheet.upsert({
           where: {
             laborerId_date: {
@@ -237,6 +260,7 @@ router.post('/bulk', async (req: AuthRequest, res, next) => {
           update: {
             hoursWorked: timesheetData.hoursWorked,
             overtime: timesheetData.overtime,
+            overtimeMultiplier: overtimeMultiplier,
             notes: timesheetData.notes,
             jobId: timesheetData.jobId
           },
@@ -244,6 +268,7 @@ router.post('/bulk', async (req: AuthRequest, res, next) => {
             date: data.date,
             hoursWorked: timesheetData.hoursWorked,
             overtime: timesheetData.overtime,
+            overtimeMultiplier: overtimeMultiplier,
             notes: timesheetData.notes,
             laborerId: timesheetData.laborerId,
             jobId: timesheetData.jobId,

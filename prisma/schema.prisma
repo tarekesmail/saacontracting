@@ -61,11 +61,12 @@ model Job {
 }
 
 model Timesheet {
-  id         String   @id @default(cuid())
-  date       DateTime @db.Date
-  hoursWorked Decimal @db.Decimal(5, 2) // Hours worked (e.g., 8.5)
-  overtime   Decimal  @db.Decimal(5, 2) @default(0) // Overtime hours
-  notes      String?  // Optional notes
+  id              String   @id @default(cuid())
+  date            DateTime @db.Date
+  hoursWorked     Decimal  @db.Decimal(5, 2) // Hours worked (e.g., 8.5)
+  overtime        Decimal  @db.Decimal(5, 2) @default(0) // Overtime hours
+  overtimeMultiplier Decimal @db.Decimal(3, 1) @default(1.5) // Overtime multiplier (1.5, 2.0, 3.0, etc.)
+  notes           String?  // Optional notes
   
   laborerId  String
   jobId      String

@@ -17,11 +17,13 @@ import toast from 'react-hot-toast';
 
 const bulkTimesheetSchema = z.object({
   date: z.string().min(1, 'Date is required'),
+  defaultOvertimeMultiplier: z.number().min(1).max(5),
   timesheets: z.array(z.object({
     laborerId: z.string().min(1),
     jobId: z.string().min(1),
     hoursWorked: z.number().min(0).max(24),
     overtime: z.number().min(0).max(24),
+    overtimeMultiplier: z.number().min(1).max(5).optional(),
     notes: z.string().optional()
   }))
 });
@@ -33,11 +35,13 @@ interface TimesheetEntry {
   jobId: string;
   hoursWorked: number;
   overtime: number;
+  overtimeMultiplier: number;
   notes: string;
 }
 
 export default function TimesheetsPage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [defaultOvertimeMultiplier, setDefaultOvertimeMultiplier] = useState(1.5);
   const [timesheetEntries, setTimesheetEntries] = useState<TimesheetEntry[]>([]);
   const [showSummary, setShowSummary] = useState(false);
   const { user } = useAuth();
@@ -95,11 +99,12 @@ export default function TimesheetsPage() {
         jobId: laborer.jobId,
         hoursWorked: 0,
         overtime: 0,
+        overtimeMultiplier: defaultOvertimeMultiplier,
         notes: ''
       }));
       setTimesheetEntries(entries);
     }
-  }, [laborers, timesheetEntries.length]);
+  }, [laborers, timesheetEntries.length, defaultOvertimeMultiplier]);
 
   // Update entries with existing timesheet data
   useEffect(() => {
@@ -111,6 +116,7 @@ export default function TimesheetsPage() {
             ...entry,
             hoursWorked: parseFloat(existing.hoursWorked),
             overtime: parseFloat(existing.overtime),
+            overtimeMultiplier: parseFloat(existing.overtimeMultiplier || defaultOvertimeMultiplier),
             notes: existing.notes || ''
           };
         }
@@ -118,7 +124,7 @@ export default function TimesheetsPage() {
       });
       setTimesheetEntries(updatedEntries);
     }
-  }, [existingTimesheets]);
+  }, [existingTimesheets, defaultOvertimeMultiplier]);
 
   const updateTimesheetEntry = (index: number, field: keyof TimesheetEntry, value: any) => {
     const updated = [...timesheetEntries];
@@ -138,6 +144,7 @@ export default function TimesheetsPage() {
 
     bulkCreateMutation.mutate({
       date: selectedDate,
+      defaultOvertimeMultiplier: defaultOvertimeMultiplier,
       timesheets: validEntries
     });
   };
@@ -148,6 +155,15 @@ export default function TimesheetsPage() {
       hoursWorked: hours
     }));
     setTimesheetEntries(updated);
+  };
+
+  const setAllOvertimeMultiplier = (multiplier: number) => {
+    const updated = timesheetEntries.map(entry => ({
+      ...entry,
+      overtimeMultiplier: multiplier
+    }));
+    setTimesheetEntries(updated);
+    setDefaultOvertimeMultiplier(multiplier);
   };
 
   const clearAllHours = () => {
@@ -200,19 +216,39 @@ export default function TimesheetsPage() {
               className="input"
             />
           </div>
+
+          <div>
+            <label className="label">Default Overtime Rate</label>
+            <select
+              value={defaultOvertimeMultiplier}
+              onChange={(e) => setDefaultOvertimeMultiplier(parseFloat(e.target.value))}
+              className="input"
+            >
+              <option value={1.5}>1.5x (Standard)</option>
+              <option value={2.0}>2.0x (Double)</option>
+              <option value={2.5}>2.5x</option>
+              <option value={3.0}>3.0x (Triple)</option>
+            </select>
+          </div>
           
           <div className="flex space-x-2">
             <button
-              onClick={() => setAllHours(8)}
+              onClick={() => setAllHours(10)}
               className="btn-secondary text-sm"
             >
-              Set All to 8h
+              Set All to 10h
             </button>
             <button
-              onClick={() => setAllHours(12)}
+              onClick={() => setAllOvertimeMultiplier(1.5)}
               className="btn-secondary text-sm"
             >
-              Set All to 12h
+              Set All 1.5x
+            </button>
+            <button
+              onClick={() => setAllOvertimeMultiplier(2.0)}
+              className="btn-secondary text-sm"
+            >
+              Set All 2x
             </button>
             <button
               onClick={clearAllHours}
@@ -282,6 +318,7 @@ export default function TimesheetsPage() {
                 <th className="table-header-cell">Job</th>
                 <th className="table-header-cell">Regular Hours</th>
                 <th className="table-header-cell">Overtime Hours</th>
+                <th className="table-header-cell">OT Rate</th>
                 <th className="table-header-cell">Total Hours</th>
                 <th className="table-header-cell">Labor Cost</th>
                 <th className="table-header-cell">Client Charge</th>
@@ -294,9 +331,9 @@ export default function TimesheetsPage() {
                 const job = jobs?.find((j: any) => j.id === entry.jobId);
                 const totalHours = entry.hoursWorked + entry.overtime;
                 const laborCost = (entry.hoursWorked * parseFloat(laborer?.salaryRate || '0')) + 
-                                 (entry.overtime * parseFloat(laborer?.salaryRate || '0') * 1.5);
+                                 (entry.overtime * parseFloat(laborer?.salaryRate || '0') * entry.overtimeMultiplier);
                 const clientCharge = (entry.hoursWorked * parseFloat(laborer?.orgRate || '0')) + 
-                                   (entry.overtime * parseFloat(laborer?.orgRate || '0') * 1.5);
+                                   (entry.overtime * parseFloat(laborer?.orgRate || '0') * entry.overtimeMultiplier);
 
                 return (
                   <tr key={entry.laborerId}>
@@ -307,17 +344,9 @@ export default function TimesheetsPage() {
                       </div>
                     </td>
                     <td className="table-cell">
-                      <select
-                        value={entry.jobId}
-                        onChange={(e) => updateTimesheetEntry(index, 'jobId', e.target.value)}
-                        className="input text-sm"
-                      >
-                        {jobs?.map((job: any) => (
-                          <option key={job.id} value={job.id}>
-                            {job.name}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="text-sm">
+                        <span className="badge badge-success">{job?.name || 'No job'}</span>
+                      </div>
                     </td>
                     <td className="table-cell">
                       <input
@@ -340,6 +369,18 @@ export default function TimesheetsPage() {
                         onChange={(e) => updateTimesheetEntry(index, 'overtime', parseFloat(e.target.value) || 0)}
                         className="input w-20 text-center"
                       />
+                    </td>
+                    <td className="table-cell">
+                      <select
+                        value={entry.overtimeMultiplier}
+                        onChange={(e) => updateTimesheetEntry(index, 'overtimeMultiplier', parseFloat(e.target.value))}
+                        className="input text-sm w-20"
+                      >
+                        <option value={1.5}>1.5x</option>
+                        <option value={2.0}>2.0x</option>
+                        <option value={2.5}>2.5x</option>
+                        <option value={3.0}>3.0x</option>
+                      </select>
                     </td>
                     <td className="table-cell font-medium">
                       {totalHours.toFixed(1)}h

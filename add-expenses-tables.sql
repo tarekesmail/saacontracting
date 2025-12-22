@@ -34,11 +34,35 @@ CREATE TABLE IF NOT EXISTS "expenses" (
 -- Create unique constraint for expense categories
 CREATE UNIQUE INDEX IF NOT EXISTS "expense_categories_tenantId_name_key" ON "expense_categories"("tenantId", "name");
 
--- Add foreign key constraints
-ALTER TABLE "expense_categories" ADD CONSTRAINT IF NOT EXISTS "expense_categories_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- Add foreign key constraints (check if they don't exist first)
+DO $$
+BEGIN
+    -- Add expense_categories foreign key to tenants
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'expense_categories_tenantId_fkey'
+    ) THEN
+        ALTER TABLE "expense_categories" ADD CONSTRAINT "expense_categories_tenantId_fkey" 
+        FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
 
-ALTER TABLE "expenses" ADD CONSTRAINT IF NOT EXISTS "expenses_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "expense_categories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+    -- Add expenses foreign key to expense_categories
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'expenses_categoryId_fkey'
+    ) THEN
+        ALTER TABLE "expenses" ADD CONSTRAINT "expenses_categoryId_fkey" 
+        FOREIGN KEY ("categoryId") REFERENCES "expense_categories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+    END IF;
 
-ALTER TABLE "expenses" ADD CONSTRAINT IF NOT EXISTS "expenses_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    -- Add expenses foreign key to tenants
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'expenses_tenantId_fkey'
+    ) THEN
+        ALTER TABLE "expenses" ADD CONSTRAINT "expenses_tenantId_fkey" 
+        FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
 
 COMMIT;

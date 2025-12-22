@@ -5,18 +5,16 @@ import { z } from 'zod';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { BuildingOfficeIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { BuildingOfficeIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
 interface Tenant {
   id: string;
   name: string;
-  domain: string;
 }
 
 const createTenantSchema = z.object({
   name: z.string().min(1, 'Tenant name is required'),
-  domain: z.string().min(1, 'Domain is required'),
 });
 
 type CreateTenantForm = z.infer<typeof createTenantSchema>;
@@ -27,6 +25,7 @@ export default function TenantSelectionPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [creatingTenant, setCreatingTenant] = useState(false);
   const [selectingTenant, setSelectingTenant] = useState<string | null>(null);
+  const [deletingTenant, setDeletingTenant] = useState<string | null>(null);
   const { user, login, logout } = useAuth();
 
   const {
@@ -71,7 +70,7 @@ export default function TenantSelectionPage() {
   const createTenant = async (data: CreateTenantForm) => {
     setCreatingTenant(true);
     try {
-      const response = await api.post('/auth/tenants', data);
+      const response = await api.post('/auth/tenants', { name: data.name });
       const newTenant = response.data;
       setTenants([...tenants, newTenant]);
       toast.success('Tenant created successfully!');
@@ -84,6 +83,24 @@ export default function TenantSelectionPage() {
       toast.error('Failed to create tenant');
     } finally {
       setCreatingTenant(false);
+    }
+  };
+
+  const deleteTenant = async (tenantId: string, tenantName: string) => {
+    if (!window.confirm(`Are you sure you want to delete "${tenantName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    setDeletingTenant(tenantId);
+    try {
+      await api.delete(`/auth/tenants/${tenantId}`);
+      setTenants(tenants.filter(t => t.id !== tenantId));
+      toast.success('Tenant deleted successfully!');
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || 'Failed to delete tenant';
+      toast.error(errorMessage);
+    } finally {
+      setDeletingTenant(null);
     }
   };
 
@@ -125,23 +142,43 @@ export default function TenantSelectionPage() {
               {tenants.map((tenant) => (
                 <div
                   key={tenant.id}
-                  className="card p-6 hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => selectTenant(tenant.id)}
+                  className="card p-6 hover:shadow-md transition-shadow relative group"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 p-2 bg-primary-100 rounded-lg">
-                        <BuildingOfficeIcon className="h-6 w-6 text-primary-600" />
+                  <div 
+                    className="cursor-pointer"
+                    onClick={() => selectTenant(tenant.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 p-2 bg-primary-100 rounded-lg">
+                          <BuildingOfficeIcon className="h-6 w-6 text-primary-600" />
+                        </div>
+                        <div className="ml-3">
+                          <h4 className="text-lg font-medium text-gray-900">{tenant.name}</h4>
+                        </div>
                       </div>
-                      <div className="ml-3">
-                        <h4 className="text-lg font-medium text-gray-900">{tenant.name}</h4>
-                        <p className="text-sm text-gray-500">{tenant.domain}</p>
-                      </div>
+                      {selectingTenant === tenant.id && (
+                        <LoadingSpinner size="sm" />
+                      )}
                     </div>
-                    {selectingTenant === tenant.id && (
-                      <LoadingSpinner size="sm" />
-                    )}
                   </div>
+                  
+                  {/* Delete Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteTenant(tenant.id, tenant.name);
+                    }}
+                    disabled={deletingTenant === tenant.id}
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded"
+                    title="Delete Tenant"
+                  >
+                    {deletingTenant === tenant.id ? (
+                      <LoadingSpinner size="sm" />
+                    ) : (
+                      <TrashIcon className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
               ))}
             </div>
@@ -182,19 +219,6 @@ export default function TenantSelectionPage() {
                   />
                   {errors.name && (
                     <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="label">Domain</label>
-                  <input
-                    {...register('domain')}
-                    type="text"
-                    className="input"
-                    placeholder="e.g., main, branch1"
-                  />
-                  {errors.domain && (
-                    <p className="mt-1 text-sm text-red-600">{errors.domain.message}</p>
                   )}
                 </div>
 

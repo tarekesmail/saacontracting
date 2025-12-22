@@ -6,7 +6,6 @@ interface User {
   tenant: {
     id: string;
     name: string;
-    domain: string;
   } | null;
 }
 

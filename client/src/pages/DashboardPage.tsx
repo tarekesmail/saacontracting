@@ -81,7 +81,6 @@ export default function DashboardPage() {
               <BuildingOfficeIcon className="h-5 w-5 text-primary-600" />
               <div className="text-sm">
                 <p className="font-medium text-primary-900">{user.tenant.name}</p>
-                <p className="text-primary-600">{user.tenant.domain}</p>
               </div>
             </div>
           )}

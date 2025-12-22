@@ -44,8 +44,7 @@ router.post('/login', async (req, res, next) => {
         username,
         tenant: tenant ? {
           id: tenant.id,
-          name: tenant.name,
-          domain: tenant.domain
+          name: tenant.name
         } : null
       }
     });
@@ -58,6 +57,14 @@ router.post('/login', async (req, res, next) => {
 router.get('/tenants', async (req, res, next) => {
   try {
     const tenants = await prisma.tenant.findMany({
+      include: {
+        _count: {
+          select: {
+            laborGroups: true,
+            laborers: true
+          }
+        }
+      },
       orderBy: { name: 'asc' }
     });
     res.json(tenants);
@@ -69,17 +76,88 @@ router.get('/tenants', async (req, res, next) => {
 // Create new tenant
 router.post('/tenants', async (req, res, next) => {
   try {
-    const { name, domain } = req.body;
+    const { name } = req.body;
 
-    if (!name || !domain) {
-      return res.status(400).json({ error: 'Name and domain are required' });
+    if (!name) {
+      return res.status(400).json({ error: 'Name is required' });
     }
 
     const tenant = await prisma.tenant.create({
-      data: { name, domain }
+      data: { name }
     });
 
     res.status(201).json(tenant);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update tenant
+router.put('/tenants/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
+    // Check if tenant exists
+    const existingTenant = await prisma.tenant.findUnique({
+      where: { id }
+    });
+
+    if (!existingTenant) {
+      return res.status(404).json({ error: 'Tenant not found' });
+    }
+
+    // Update the tenant
+    const tenant = await prisma.tenant.update({
+      where: { id },
+      data: { name }
+    });
+
+    res.json(tenant);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Delete tenant
+router.delete('/tenants/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    // Check if tenant exists
+    const tenant = await prisma.tenant.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: {
+            laborGroups: true,
+            laborers: true
+          }
+        }
+      }
+    });
+
+    if (!tenant) {
+      return res.status(404).json({ error: 'Tenant not found' });
+    }
+
+    // Check if tenant has associated data
+    if (tenant._count.laborGroups > 0 || tenant._count.laborers > 0) {
+      return res.status(400).json({ 
+        error: 'Cannot delete tenant with existing data. Please remove all laborers and groups first.' 
+      });
+    }
+
+    // Delete the tenant
+    await prisma.tenant.delete({
+      where: { id }
+    });
+
+    res.json({ message: 'Tenant deleted successfully' });
   } catch (error) {
     next(error);
   }

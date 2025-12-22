@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -11,6 +11,7 @@ import {
   XMarkIcon,
   BuildingOfficeIcon,
   ChevronDownIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -18,15 +19,33 @@ const navigation = [
   { name: 'Laborers', href: '/laborers', icon: UsersIcon },
   { name: 'Groups', href: '/groups', icon: UserGroupIcon },
   { name: 'Jobs', href: '/jobs', icon: BriefcaseIcon },
+  { name: 'Tenants', href: '/tenants', icon: Cog6ToothIcon },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [tenantDropdownOpen, setTenantDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setTenantDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const switchTenant = () => {
+    setTenantDropdownOpen(false);
     navigate('/tenant-selection');
   };
 
@@ -109,22 +128,33 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <div className="flex flex-1" />
             <div className="flex items-center gap-x-4 lg:gap-x-6">
               <div className="flex items-center space-x-4">
-                {/* Tenant Info with Switch Button */}
+                {/* Tenant Switcher */}
                 {user?.tenant && (
-                  <div className="flex items-center space-x-2">
-                    <div className="flex items-center space-x-2 px-3 py-1 bg-primary-50 rounded-lg">
+                  <div className="relative" ref={dropdownRef}>
+                    <button
+                      onClick={() => setTenantDropdownOpen(!tenantDropdownOpen)}
+                      className="flex items-center space-x-2 px-3 py-2 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
+                    >
                       <BuildingOfficeIcon className="h-4 w-4 text-primary-600" />
                       <div className="text-sm">
                         <p className="font-medium text-primary-900">{user.tenant.name}</p>
                       </div>
-                      <button
-                        onClick={switchTenant}
-                        className="text-primary-600 hover:text-primary-800 transition-colors"
-                        title="Switch Tenant"
-                      >
-                        <ChevronDownIcon className="h-4 w-4" />
-                      </button>
-                    </div>
+                      <ChevronDownIcon className="h-4 w-4 text-primary-600" />
+                    </button>
+                    
+                    {/* Dropdown Menu */}
+                    {tenantDropdownOpen && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                        <div className="py-1">
+                          <button
+                            onClick={switchTenant}
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          >
+                            Switch Tenant
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 

@@ -597,4 +597,188 @@ router.get('/client/excel', async (req: AuthRequest, res, next) => {
   }
 });
 
+// Get expense report data
+router.get('/expenses', async (req: AuthRequest, res, next) => {
+  try {
+    const { startDate, endDate, categoryId } = reportQuerySchema.parse(req.query);
+    
+    const where: any = {
+      tenantId: req.user!.tenantId!,
+      date: {
+        gte: new Date(startDate),
+        lte: new Date(endDate)
+      }
+    };
+
+    if (categoryId) where.categoryId = categoryId;
+
+    const expenses = await prisma.expense.findMany({
+      where,
+      include: {
+        category: true
+      },
+      orderBy: [
+        { category: { name: 'asc' } },
+        { date: 'desc' }
+      ]
+    });
+
+    // Group by category and aggregate data
+    const categoryMap = new Map();
+    
+    expenses.forEach(expense => {
+      const categoryId = expense.category.id;
+      const amount = Number(expense.amount);
+
+      if (categoryMap.has(categoryId)) {
+        const existing = categoryMap.get(categoryId);
+        existing.totalAmount += amount;
+        existing.expenseCount += 1;
+        existing.expenses.push({
+          date: expense.date,
+          description: expense.description,
+          amount: amount,
+          receipt: expense.receipt,
+          notes: expense.notes
+        });
+      } else {
+        categoryMap.set(categoryId, {
+          categoryName: expense.category.name,
+          categoryColor: expense.category.color,
+          totalAmount: amount,
+          expenseCount: 1,
+          expenses: [{
+            date: expense.date,
+            description: expense.description,
+            amount: amount,
+            receipt: expense.receipt,
+            notes: expense.notes
+          }]
+        });
+      }
+    });
+
+    // Convert map to array
+    const reportData = Array.from(categoryMap.values());
+
+    // Calculate summary
+    const summary = {
+      totalAmount: reportData.reduce((sum, item) => sum + item.totalAmount, 0),
+      totalExpenses: reportData.reduce((sum, item) => sum + item.expenseCount, 0),
+      categoryCount: reportData.length
+    };
+
+    res.json({
+      data: reportData,
+      summary,
+      reportType: 'expenses',
+      dateRange: { startDate, endDate }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Export expense report to Excel
+router.get('/expenses/excel', async (req: AuthRequest, res, next) => {
+  try {
+    const { startDate, endDate, categoryId } = reportQuerySchema.parse(req.query);
+    
+    const where: any = {
+      tenantId: req.user!.tenantId!,
+      date: {
+        gte: new Date(startDate),
+        lte: new Date(endDate)
+      }
+    };
+
+    if (categoryId) where.categoryId = categoryId;
+
+    const expenses = await prisma.expense.findMany({
+      where,
+      include: {
+        category: true
+      },
+      orderBy: [
+        { date: 'desc' }
+      ]
+    });
+
+    // Create workbook
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Expense Report');
+
+    // Add title
+    worksheet.mergeCells('A1:G1');
+    const titleCell = worksheet.getCell('A1');
+    titleCell.value = 'SAA Contracting - Expense Report';
+    titleCell.font = { size: 16, bold: true };
+    titleCell.alignment = { horizontal: 'center' };
+
+    // Add date range
+    worksheet.mergeCells('A2:G2');
+    const dateCell = worksheet.getCell('A2');
+    dateCell.value = `Period: ${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}`;
+    dateCell.font = { size: 12 };
+    dateCell.alignment = { horizontal: 'center' };
+
+    // Add headers
+    const headers = [
+      'Date', 'Category', 'Description', 'Amount (SAR)', 'Receipt', 'Notes'
+    ];
+    
+    worksheet.addRow([]); // Empty row
+    const headerRow = worksheet.addRow(headers);
+    headerRow.font = { bold: true };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+
+    // Add expense data
+    let totalAmount = 0;
+
+    expenses.forEach(expense => {
+      totalAmount += Number(expense.amount);
+
+      worksheet.addRow([
+        new Date(expense.date).toLocaleDateString(),
+        expense.category.name,
+        expense.description,
+        Number(expense.amount),
+        expense.receipt || '',
+        expense.notes || ''
+      ]);
+    });
+
+    // Add summary
+    worksheet.addRow([]); // Empty row
+    const summaryRow = worksheet.addRow([
+      'TOTAL', '', '', totalAmount.toFixed(2), '', ''
+    ]);
+    summaryRow.font = { bold: true };
+    summaryRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFFFD700' }
+    };
+
+    // Auto-fit columns
+    worksheet.columns.forEach(column => {
+      column.width = 15;
+    });
+
+    // Set response headers
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=expense-report-${startDate}-${endDate}.xlsx`);
+
+    // Write to response
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    next(error);
+  }
+});
+
 export { router as reportRoutes };

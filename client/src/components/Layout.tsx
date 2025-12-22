@@ -17,6 +17,8 @@ import {
   ArrowPathIcon,
   ClockIcon,
   DocumentChartBarIcon,
+  CurrencyDollarIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -24,6 +26,15 @@ const navigation = [
   { name: 'Laborers', href: '/laborers', icon: UsersIcon },
   { name: 'Jobs', href: '/jobs', icon: BriefcaseIcon },
   { name: 'Timesheets', href: '/timesheets', icon: ClockIcon },
+  { 
+    name: 'Expenses', 
+    icon: CurrencyDollarIcon,
+    children: [
+      { name: 'Manage Expenses', href: '/expenses' },
+      { name: 'Categories', href: '/expense-categories' },
+      { name: 'Expense Reports', href: '/expense-reports' }
+    ]
+  },
   { name: 'Reports', href: '/reports', icon: DocumentChartBarIcon },
   { name: 'Tenants', href: '/tenants', icon: Cog6ToothIcon },
 ];
@@ -36,10 +47,12 @@ interface Tenant {
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tenantDropdownOpen, setTenantDropdownOpen] = useState(false);
+  const [expenseDropdownOpen, setExpenseDropdownOpen] = useState(false);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loadingTenants, setLoadingTenants] = useState(false);
   const [switchingTenant, setSwitchingTenant] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const expenseDropdownRef = useRef<HTMLDivElement>(null);
   const { user, login, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -49,6 +62,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setTenantDropdownOpen(false);
+      }
+      if (expenseDropdownRef.current && !expenseDropdownRef.current.contains(event.target as Node)) {
+        setExpenseDropdownOpen(false);
       }
     };
 
@@ -108,7 +124,76 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const handleLogout = () => {
     setTenants([]); // Clear tenant list
     setTenantDropdownOpen(false);
+    setExpenseDropdownOpen(false);
     logout();
+  };
+
+  const isExpenseActive = location.pathname.startsWith('/expense');
+
+  const NavigationItem = ({ item }: { item: any }) => {
+    if (item.children) {
+      const isActive = item.children.some((child: any) => location.pathname === child.href);
+      const isOpen = item.name === 'Expenses' ? expenseDropdownOpen : false;
+      
+      return (
+        <div className="relative" ref={item.name === 'Expenses' ? expenseDropdownRef : undefined}>
+          <button
+            onClick={() => {
+              if (item.name === 'Expenses') {
+                setExpenseDropdownOpen(!expenseDropdownOpen);
+              }
+            }}
+            className={`group flex items-center w-full px-2 py-2 text-sm font-medium rounded-md transition-colors ${
+              isActive
+                ? 'bg-primary-100 text-primary-900'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            }`}
+          >
+            <item.icon className={`mr-3 h-5 w-5 ${isActive ? 'text-primary-500' : 'text-gray-400 group-hover:text-gray-500'}`} />
+            {item.name}
+            <ChevronRightIcon className={`ml-auto h-4 w-4 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+          </button>
+          
+          {isOpen && (
+            <div className="ml-6 mt-1 space-y-1">
+              {item.children.map((child: any) => (
+                <Link
+                  key={child.name}
+                  to={child.href}
+                  onClick={() => {
+                    setSidebarOpen(false);
+                    setExpenseDropdownOpen(false);
+                  }}
+                  className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
+                    location.pathname === child.href
+                      ? 'bg-primary-100 text-primary-900'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  {child.name}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const isActive = location.pathname === item.href;
+    return (
+      <Link
+        to={item.href}
+        onClick={() => setSidebarOpen(false)}
+        className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
+          isActive
+            ? 'bg-primary-100 text-primary-900'
+            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+        }`}
+      >
+        <item.icon className={`mr-3 h-5 w-5 ${isActive ? 'text-primary-500' : 'text-gray-400 group-hover:text-gray-500'}`} />
+        {item.name}
+      </Link>
+    );
   };
 
   return (
@@ -124,24 +209,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
-            {navigation.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
-                    isActive
-                      ? 'bg-primary-100 text-primary-900'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                >
-                  <item.icon className={`mr-3 h-5 w-5 ${isActive ? 'text-primary-500' : 'text-gray-400 group-hover:text-gray-500'}`} />
-                  {item.name}
-                </Link>
-              );
-            })}
+            {navigation.map((item) => (
+              <NavigationItem key={item.name} item={item} />
+            ))}
           </nav>
         </div>
       </div>
@@ -153,23 +223,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <h1 className="text-xl font-bold text-gray-900">SAA Contracting</h1>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
-            {navigation.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
-                    isActive
-                      ? 'bg-primary-100 text-primary-900'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                >
-                  <item.icon className={`mr-3 h-5 w-5 ${isActive ? 'text-primary-500' : 'text-gray-400 group-hover:text-gray-500'}`} />
-                  {item.name}
-                </Link>
-              );
-            })}
+            {navigation.map((item) => (
+              <NavigationItem key={item.name} item={item} />
+            ))}
           </nav>
         </div>
       </div>

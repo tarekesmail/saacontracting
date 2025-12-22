@@ -8,6 +8,9 @@ import LaborersPage from './pages/LaborersPage';
 import JobsPage from './pages/JobsPage';
 import TimesheetsPage from './pages/TimesheetsPage';
 import ReportsPage from './pages/ReportsPage';
+import ExpensesPage from './pages/ExpensesPage';
+import ExpenseCategoriesPage from './pages/ExpenseCategoriesPage';
+import ExpenseReportsPage from './pages/ExpenseReportsPage';
 import TenantsPage from './pages/TenantsPage';
 import PublicLaborerPage from './pages/PublicLaborerPage';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -46,6 +49,9 @@ function App() {
           <Route path="/laborers" element={<Layout><LaborersPage /></Layout>} />
           <Route path="/jobs" element={<Layout><JobsPage /></Layout>} />
           <Route path="/timesheets" element={<Layout><TimesheetsPage /></Layout>} />
+          <Route path="/expenses" element={<Layout><ExpensesPage /></Layout>} />
+          <Route path="/expense-categories" element={<Layout><ExpenseCategoriesPage /></Layout>} />
+          <Route path="/expense-reports" element={<Layout><ExpenseReportsPage /></Layout>} />
           <Route path="/reports" element={<Layout><ReportsPage /></Layout>} />
           <Route path="/tenants" element={<Layout><TenantsPage /></Layout>} />
           <Route path="*" element={<Navigate to="/" replace />} />

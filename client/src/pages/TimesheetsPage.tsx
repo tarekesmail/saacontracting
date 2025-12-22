@@ -157,15 +157,6 @@ export default function TimesheetsPage() {
     setTimesheetEntries(updated);
   };
 
-  const setAllOvertimeMultiplier = (multiplier: number) => {
-    const updated = timesheetEntries.map(entry => ({
-      ...entry,
-      overtimeMultiplier: multiplier
-    }));
-    setTimesheetEntries(updated);
-    setDefaultOvertimeMultiplier(multiplier);
-  };
-
   const clearAllHours = () => {
     const updated = timesheetEntries.map(entry => ({
       ...entry,
@@ -216,20 +207,6 @@ export default function TimesheetsPage() {
               className="input"
             />
           </div>
-
-          <div>
-            <label className="label">Default Overtime Rate</label>
-            <select
-              value={defaultOvertimeMultiplier}
-              onChange={(e) => setDefaultOvertimeMultiplier(parseFloat(e.target.value))}
-              className="input"
-            >
-              <option value={1.5}>1.5x (Standard)</option>
-              <option value={2.0}>2.0x (Double)</option>
-              <option value={2.5}>2.5x</option>
-              <option value={3.0}>3.0x (Triple)</option>
-            </select>
-          </div>
           
           <div className="flex space-x-2">
             <button
@@ -237,18 +214,6 @@ export default function TimesheetsPage() {
               className="btn-secondary text-sm"
             >
               Set All to 10h
-            </button>
-            <button
-              onClick={() => setAllOvertimeMultiplier(1.5)}
-              className="btn-secondary text-sm"
-            >
-              Set All 1.5x
-            </button>
-            <button
-              onClick={() => setAllOvertimeMultiplier(2.0)}
-              className="btn-secondary text-sm"
-            >
-              Set All 2x
             </button>
             <button
               onClick={clearAllHours}
@@ -371,16 +336,16 @@ export default function TimesheetsPage() {
                       />
                     </td>
                     <td className="table-cell">
-                      <select
+                      <input
+                        type="number"
+                        min="1"
+                        max="5"
+                        step="0.1"
                         value={entry.overtimeMultiplier}
-                        onChange={(e) => updateTimesheetEntry(index, 'overtimeMultiplier', parseFloat(e.target.value))}
-                        className="input text-sm w-20"
-                      >
-                        <option value={1.5}>1.5x</option>
-                        <option value={2.0}>2.0x</option>
-                        <option value={2.5}>2.5x</option>
-                        <option value={3.0}>3.0x</option>
-                      </select>
+                        onChange={(e) => updateTimesheetEntry(index, 'overtimeMultiplier', parseFloat(e.target.value) || 1.5)}
+                        className="input w-16 text-center text-sm"
+                        placeholder="1.5"
+                      />
                     </td>
                     <td className="table-cell font-medium">
                       {totalHours.toFixed(1)}h

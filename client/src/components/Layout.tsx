@@ -19,6 +19,7 @@ import {
   DocumentChartBarIcon,
   CurrencyDollarIcon,
   ChevronRightIcon,
+  PresentationChartBarIcon,
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -36,12 +37,9 @@ const navigation = [
     ]
   },
   { name: 'Reports', href: '/reports', icon: DocumentChartBarIcon },
+  { name: 'P&L Report', href: '/profit-loss', icon: PresentationChartBarIcon },
   { name: 'Tenants', href: '/tenants', icon: Cog6ToothIcon },
 ];
-
-interface Tenant {
-  id: string;
-  name: string;
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {

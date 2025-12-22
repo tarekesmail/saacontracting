@@ -36,18 +36,21 @@ RUN apt-get update && apt-get install -y \
     dumb-init \
     && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user
-RUN groupadd -r nodejs && useradd -r -g nodejs nodejs
-
 # Copy package files and install production dependencies
 COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
-# Copy built application
-COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+# Copy built application and generated Prisma client
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
+# Create app user but run as root to avoid permission issues
+RUN groupadd -r nodejs && useradd -r -g nodejs nodejs
+RUN chown -R nodejs:nodejs /app
+
+# Switch to app user
 USER nodejs
 
 EXPOSE 3000

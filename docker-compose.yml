@@ -19,14 +19,9 @@ services:
     volumes:
       - ./prisma:/app/prisma
     restart: unless-stopped
+    # Skip Prisma generation since it's done during build
     command: >
       sh -c "
         npx prisma migrate deploy &&
         node dist/server/index.js
       "
-
-# Using external postgres container
-networks:
-  default:
-    external: true
-    name: bridge

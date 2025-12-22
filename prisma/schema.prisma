@@ -14,28 +14,10 @@ model Tenant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users       User[]
   laborers    Laborer[]
   laborGroups LaborGroup[]
 
   @@map("tenants")
-}
-
-model User {
-  id       String   @id @default(cuid())
-  email    String   @unique
-  password String
-  name     String
-  role     UserRole @default(READ_ONLY)
-  tenantId String
-  isActive Boolean  @default(true)
-
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("users")
 }
 
 model Laborer {
@@ -93,10 +75,4 @@ model Job {
 
   @@unique([groupId, name])
   @@map("jobs")
-}
-
-enum UserRole {
-  ADMIN
-  EDITOR
-  READ_ONLY
 }

@@ -1,70 +1,52 @@
 import express from 'express';
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
-import { z } from 'zod';
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-  tenantDomain: z.string().min(1)
-});
+// Simple hardcoded credentials
+const ADMIN_USERNAME = 'admin';
+const ADMIN_PASSWORD = 'saacontracting2024';
 
-const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-  name: z.string().min(1),
-  tenantName: z.string().min(1),
-  tenantDomain: z.string().min(1)
-});
-
-// Login
+// Login with tenant selection
 router.post('/login', async (req, res, next) => {
   try {
-    const { email, password, tenantDomain } = loginSchema.parse(req.body);
+    const { username, password, tenantId } = req.body;
 
-    const tenant = await prisma.tenant.findUnique({
-      where: { domain: tenantDomain }
-    });
-
-    if (!tenant) {
-      return res.status(401).json({ error: 'Invalid tenant domain' });
-    }
-
-    const user = await prisma.user.findFirst({
-      where: {
-        email,
-        tenantId: tenant.id,
-        isActive: true
-      },
-      include: { tenant: true }
-    });
-
-    if (!user || !await bcrypt.compare(password, user.password)) {
+    // Check credentials
+    if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    // If tenantId provided, verify it exists
+    let tenant = null;
+    if (tenantId) {
+      tenant = await prisma.tenant.findUnique({
+        where: { id: tenantId }
+      });
+      
+      if (!tenant) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+    }
+
+    // Create session token
     const token = jwt.sign(
-      { userId: user.id, tenantId: user.tenantId },
-      process.env.JWT_SECRET || 'your-secret-key',
+      { username, tenantId: tenant?.id || null },
+      process.env.JWT_SECRET || 'simple-secret',
       { expiresIn: '24h' }
     );
 
     res.json({
       token,
       user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        tenant: {
-          id: user.tenant.id,
-          name: user.tenant.name,
-          domain: user.tenant.domain
-        }
+        username,
+        tenant: tenant ? {
+          id: tenant.id,
+          name: tenant.name,
+          domain: tenant.domain
+        } : null
       }
     });
   } catch (error) {
@@ -72,54 +54,32 @@ router.post('/login', async (req, res, next) => {
   }
 });
 
-// Register (creates tenant and admin user)
-router.post('/register', async (req, res, next) => {
+// Get all tenants for selection
+router.get('/tenants', async (req, res, next) => {
   try {
-    const { email, password, name, tenantName, tenantDomain } = registerSchema.parse(req.body);
+    const tenants = await prisma.tenant.findMany({
+      orderBy: { name: 'asc' }
+    });
+    res.json(tenants);
+  } catch (error) {
+    next(error);
+  }
+});
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+// Create new tenant
+router.post('/tenants', async (req, res, next) => {
+  try {
+    const { name, domain } = req.body;
 
-    const result = await prisma.$transaction(async (tx) => {
-      const tenant = await tx.tenant.create({
-        data: {
-          name: tenantName,
-          domain: tenantDomain
-        }
-      });
+    if (!name || !domain) {
+      return res.status(400).json({ error: 'Name and domain are required' });
+    }
 
-      const user = await tx.user.create({
-        data: {
-          email,
-          password: hashedPassword,
-          name,
-          role: 'ADMIN',
-          tenantId: tenant.id
-        }
-      });
-
-      return { tenant, user };
+    const tenant = await prisma.tenant.create({
+      data: { name, domain }
     });
 
-    const token = jwt.sign(
-      { userId: result.user.id, tenantId: result.tenant.id },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '24h' }
-    );
-
-    res.status(201).json({
-      token,
-      user: {
-        id: result.user.id,
-        email: result.user.email,
-        name: result.user.name,
-        role: result.user.role,
-        tenant: {
-          id: result.tenant.id,
-          name: result.tenant.name,
-          domain: result.tenant.domain
-        }
-      }
-    });
+    res.status(201).json(tenant);
   } catch (error) {
     next(error);
   }

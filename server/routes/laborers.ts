@@ -1,7 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
-import { AuthRequest, requireRole } from '../middleware/auth';
+import { AuthRequest } from '../middleware/auth';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -16,14 +16,14 @@ const laborerSchema = z.object({
   jobId: z.string().optional()
 });
 
-// Get all laborers
+// Get all laborers for current tenant
 router.get('/', async (req: AuthRequest, res, next) => {
   try {
     const { page = 1, limit = 10, search = '' } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
     const where = {
-      tenantId: req.user!.tenantId,
+      tenantId: req.user!.tenantId!,
       isActive: true,
       ...(search && {
         OR: [
@@ -62,40 +62,15 @@ router.get('/', async (req: AuthRequest, res, next) => {
   }
 });
 
-// Get laborer by ID
-router.get('/:id', async (req: AuthRequest, res, next) => {
-  try {
-    const laborer = await prisma.laborer.findFirst({
-      where: {
-        id: req.params.id,
-        tenantId: req.user!.tenantId,
-        isActive: true
-      },
-      include: {
-        group: true,
-        job: true
-      }
-    });
-
-    if (!laborer) {
-      return res.status(404).json({ error: 'Laborer not found' });
-    }
-
-    res.json(laborer);
-  } catch (error) {
-    next(error);
-  }
-});
-
 // Create laborer
-router.post('/', requireRole(['ADMIN', 'EDITOR']), async (req: AuthRequest, res, next) => {
+router.post('/', async (req: AuthRequest, res, next) => {
   try {
     const data = laborerSchema.parse(req.body);
 
     const laborer = await prisma.laborer.create({
       data: {
         ...data,
-        tenantId: req.user!.tenantId
+        tenantId: req.user!.tenantId!
       },
       include: {
         group: true,
@@ -110,14 +85,14 @@ router.post('/', requireRole(['ADMIN', 'EDITOR']), async (req: AuthRequest, res,
 });
 
 // Update laborer
-router.put('/:id', requireRole(['ADMIN', 'EDITOR']), async (req: AuthRequest, res, next) => {
+router.put('/:id', async (req: AuthRequest, res, next) => {
   try {
     const data = laborerSchema.parse(req.body);
 
     const laborer = await prisma.laborer.updateMany({
       where: {
         id: req.params.id,
-        tenantId: req.user!.tenantId
+        tenantId: req.user!.tenantId!
       },
       data
     });
@@ -129,7 +104,7 @@ router.put('/:id', requireRole(['ADMIN', 'EDITOR']), async (req: AuthRequest, re
     const updatedLaborer = await prisma.laborer.findFirst({
       where: {
         id: req.params.id,
-        tenantId: req.user!.tenantId
+        tenantId: req.user!.tenantId!
       },
       include: {
         group: true,
@@ -144,12 +119,12 @@ router.put('/:id', requireRole(['ADMIN', 'EDITOR']), async (req: AuthRequest, re
 });
 
 // Delete laborer
-router.delete('/:id', requireRole(['ADMIN']), async (req: AuthRequest, res, next) => {
+router.delete('/:id', async (req: AuthRequest, res, next) => {
   try {
     const laborer = await prisma.laborer.updateMany({
       where: {
         id: req.params.id,
-        tenantId: req.user!.tenantId
+        tenantId: req.user!.tenantId!
       },
       data: { isActive: false }
     });

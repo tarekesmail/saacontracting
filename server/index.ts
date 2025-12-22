@@ -22,7 +22,7 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      scriptSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"], // Allow inline scripts for Vite
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'"],
     },
@@ -30,10 +30,12 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
-// Rate limiting
+// Rate limiting - more permissive for production
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 1000, // increased from 100 to 1000 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 app.use(limiter);
 
@@ -52,6 +54,11 @@ app.use('/api/laborers', authenticateToken, laborerRoutes);
 app.use('/api/groups', authenticateToken, groupRoutes);
 app.use('/api/jobs', authenticateToken, jobRoutes);
 app.use('/api/users', authenticateToken, userRoutes);
+
+// Favicon route
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).end();
+});
 
 // Serve static files from React build
 app.use(express.static(path.join(__dirname, '../../dist/client')));

@@ -1,7 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
-import { AuthRequest, requireRole } from '../middleware/auth';
+import { AuthRequest } from '../middleware/auth';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -10,12 +10,12 @@ const groupSchema = z.object({
   name: z.string().min(1)
 });
 
-// Get all groups
+// Get all groups for current tenant
 router.get('/', async (req: AuthRequest, res, next) => {
   try {
     const groups = await prisma.laborGroup.findMany({
       where: {
-        tenantId: req.user!.tenantId,
+        tenantId: req.user!.tenantId!,
         isActive: true
       },
       include: {
@@ -35,44 +35,15 @@ router.get('/', async (req: AuthRequest, res, next) => {
   }
 });
 
-// Get group by ID
-router.get('/:id', async (req: AuthRequest, res, next) => {
-  try {
-    const group = await prisma.laborGroup.findFirst({
-      where: {
-        id: req.params.id,
-        tenantId: req.user!.tenantId,
-        isActive: true
-      },
-      include: {
-        jobs: {
-          where: { isActive: true }
-        },
-        laborers: {
-          where: { isActive: true }
-        }
-      }
-    });
-
-    if (!group) {
-      return res.status(404).json({ error: 'Group not found' });
-    }
-
-    res.json(group);
-  } catch (error) {
-    next(error);
-  }
-});
-
 // Create group
-router.post('/', requireRole(['ADMIN', 'EDITOR']), async (req: AuthRequest, res, next) => {
+router.post('/', async (req: AuthRequest, res, next) => {
   try {
     const { name } = groupSchema.parse(req.body);
 
     const group = await prisma.laborGroup.create({
       data: {
         name,
-        tenantId: req.user!.tenantId
+        tenantId: req.user!.tenantId!
       },
       include: {
         jobs: true,
@@ -89,14 +60,14 @@ router.post('/', requireRole(['ADMIN', 'EDITOR']), async (req: AuthRequest, res,
 });
 
 // Update group
-router.put('/:id', requireRole(['ADMIN', 'EDITOR']), async (req: AuthRequest, res, next) => {
+router.put('/:id', async (req: AuthRequest, res, next) => {
   try {
     const { name } = groupSchema.parse(req.body);
 
     const group = await prisma.laborGroup.updateMany({
       where: {
         id: req.params.id,
-        tenantId: req.user!.tenantId
+        tenantId: req.user!.tenantId!
       },
       data: { name }
     });
@@ -108,7 +79,7 @@ router.put('/:id', requireRole(['ADMIN', 'EDITOR']), async (req: AuthRequest, re
     const updatedGroup = await prisma.laborGroup.findFirst({
       where: {
         id: req.params.id,
-        tenantId: req.user!.tenantId
+        tenantId: req.user!.tenantId!
       },
       include: {
         jobs: {
@@ -127,12 +98,12 @@ router.put('/:id', requireRole(['ADMIN', 'EDITOR']), async (req: AuthRequest, re
 });
 
 // Delete group
-router.delete('/:id', requireRole(['ADMIN']), async (req: AuthRequest, res, next) => {
+router.delete('/:id', async (req: AuthRequest, res, next) => {
   try {
     const group = await prisma.laborGroup.updateMany({
       where: {
         id: req.params.id,
-        tenantId: req.user!.tenantId
+        tenantId: req.user!.tenantId!
       },
       data: { isActive: false }
     });

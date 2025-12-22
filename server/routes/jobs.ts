@@ -1,7 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
-import { AuthRequest, requireRole } from '../middleware/auth';
+import { AuthRequest } from '../middleware/auth';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -12,7 +12,7 @@ const jobSchema = z.object({
   groupId: z.string().min(1)
 });
 
-// Get all jobs
+// Get all jobs for current tenant
 router.get('/', async (req: AuthRequest, res, next) => {
   try {
     const { groupId } = req.query;
@@ -22,7 +22,7 @@ router.get('/', async (req: AuthRequest, res, next) => {
         isActive: true,
         ...(groupId && { groupId: groupId as string }),
         group: {
-          tenantId: req.user!.tenantId
+          tenantId: req.user!.tenantId!
         }
       },
       include: {
@@ -40,37 +40,8 @@ router.get('/', async (req: AuthRequest, res, next) => {
   }
 });
 
-// Get job by ID
-router.get('/:id', async (req: AuthRequest, res, next) => {
-  try {
-    const job = await prisma.job.findFirst({
-      where: {
-        id: req.params.id,
-        isActive: true,
-        group: {
-          tenantId: req.user!.tenantId
-        }
-      },
-      include: {
-        group: true,
-        laborers: {
-          where: { isActive: true }
-        }
-      }
-    });
-
-    if (!job) {
-      return res.status(404).json({ error: 'Job not found' });
-    }
-
-    res.json(job);
-  } catch (error) {
-    next(error);
-  }
-});
-
 // Create job
-router.post('/', requireRole(['ADMIN', 'EDITOR']), async (req: AuthRequest, res, next) => {
+router.post('/', async (req: AuthRequest, res, next) => {
   try {
     const data = jobSchema.parse(req.body);
 
@@ -78,7 +49,7 @@ router.post('/', requireRole(['ADMIN', 'EDITOR']), async (req: AuthRequest, res,
     const group = await prisma.laborGroup.findFirst({
       where: {
         id: data.groupId,
-        tenantId: req.user!.tenantId
+        tenantId: req.user!.tenantId!
       }
     });
 
@@ -103,7 +74,7 @@ router.post('/', requireRole(['ADMIN', 'EDITOR']), async (req: AuthRequest, res,
 });
 
 // Update job
-router.put('/:id', requireRole(['ADMIN', 'EDITOR']), async (req: AuthRequest, res, next) => {
+router.put('/:id', async (req: AuthRequest, res, next) => {
   try {
     const data = jobSchema.parse(req.body);
 
@@ -112,7 +83,7 @@ router.put('/:id', requireRole(['ADMIN', 'EDITOR']), async (req: AuthRequest, re
       where: {
         id: req.params.id,
         group: {
-          tenantId: req.user!.tenantId
+          tenantId: req.user!.tenantId!
         }
       }
     });
@@ -139,13 +110,13 @@ router.put('/:id', requireRole(['ADMIN', 'EDITOR']), async (req: AuthRequest, re
 });
 
 // Delete job
-router.delete('/:id', requireRole(['ADMIN']), async (req: AuthRequest, res, next) => {
+router.delete('/:id', async (req: AuthRequest, res, next) => {
   try {
     const job = await prisma.job.findFirst({
       where: {
         id: req.params.id,
         group: {
-          tenantId: req.user!.tenantId
+          tenantId: req.user!.tenantId!
         }
       }
     });

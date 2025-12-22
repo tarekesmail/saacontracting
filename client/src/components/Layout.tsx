@@ -6,7 +6,6 @@ import {
   UsersIcon,
   UserGroupIcon,
   BriefcaseIcon,
-  Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
   Bars3Icon,
   XMarkIcon,
@@ -24,13 +23,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const location = useLocation();
 
-  const canAccessUsers = user?.role === 'ADMIN';
-
-  const allNavigation = [
-    ...navigation,
-    ...(canAccessUsers ? [{ name: 'Users', href: '/users', icon: Cog6ToothIcon }] : []),
-  ];
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile sidebar */}
@@ -44,7 +36,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
-            {allNavigation.map((item) => {
+            {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
                 <Link
@@ -73,7 +65,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <h1 className="text-xl font-bold text-gray-900">SAA Contracting</h1>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
-            {allNavigation.map((item) => {
+            {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
                 <Link
@@ -111,10 +103,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-x-4 lg:gap-x-6">
               <div className="flex items-center space-x-4">
                 <div className="text-sm">
-                  <p className="font-medium text-gray-900">{user?.name}</p>
-                  <p className="text-gray-500">{user?.tenant.name}</p>
+                  <p className="font-medium text-gray-900">{user?.username}</p>
+                  {user?.tenant && (
+                    <p className="text-gray-500">{user.tenant.name}</p>
+                  )}
                 </div>
-                <span className="badge badge-primary">{user?.role}</span>
                 <button
                   onClick={logout}
                   className="text-gray-400 hover:text-gray-600 transition-colors"

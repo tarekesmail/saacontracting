@@ -8,9 +8,8 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import toast from 'react-hot-toast';
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  tenantDomain: z.string().min(1, 'Tenant domain is required'),
+  username: z.string().min(1, 'Username is required'),
+  password: z.string().min(1, 'Password is required'),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -30,8 +29,8 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     setLoading(true);
     try {
-      await login(data.email, data.password, data.tenantDomain);
-      toast.success('Welcome back!');
+      await login(data.username, data.password);
+      toast.success('Welcome to SAA Contracting!');
     } catch (error) {
       // Error is handled by the API interceptor
     } finally {
@@ -44,47 +43,26 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
-            Sign in to your account
+            SAA Contracting
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link
-              to="/register"
-              className="font-medium text-primary-600 hover:text-primary-500"
-            >
-              create a new organization
-            </Link>
+            Labor Management System
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="tenantDomain" className="label">
-                Organization Domain
+              <label htmlFor="username" className="label">
+                Username
               </label>
               <input
-                {...register('tenantDomain')}
+                {...register('username')}
                 type="text"
                 className="input"
-                placeholder="your-company"
+                placeholder="Enter username"
               />
-              {errors.tenantDomain && (
-                <p className="mt-1 text-sm text-red-600">{errors.tenantDomain.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="email" className="label">
-                Email address
-              </label>
-              <input
-                {...register('email')}
-                type="email"
-                className="input"
-                placeholder="john@example.com"
-              />
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+              {errors.username && (
+                <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>
               )}
             </div>
 
@@ -96,7 +74,7 @@ export default function LoginPage() {
                 {...register('password')}
                 type="password"
                 className="input"
-                placeholder="••••••••"
+                placeholder="Enter password"
               />
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>

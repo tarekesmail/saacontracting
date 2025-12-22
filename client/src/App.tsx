@@ -2,12 +2,10 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import LaborersPage from './pages/LaborersPage';
 import GroupsPage from './pages/GroupsPage';
 import JobsPage from './pages/JobsPage';
-import UsersPage from './pages/UsersPage';
 import LoadingSpinner from './components/LoadingSpinner';
 
 function App() {
@@ -25,7 +23,6 @@ function App() {
     return (
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );
@@ -38,7 +35,6 @@ function App() {
         <Route path="/laborers" element={<LaborersPage />} />
         <Route path="/groups" element={<GroupsPage />} />
         <Route path="/jobs" element={<JobsPage />} />
-        <Route path="/users" element={<UsersPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

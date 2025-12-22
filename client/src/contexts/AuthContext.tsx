@@ -2,31 +2,19 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../lib/api';
 
 interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: 'ADMIN' | 'EDITOR' | 'READ_ONLY';
+  username: string;
   tenant: {
     id: string;
     name: string;
     domain: string;
-  };
+  } | null;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string, tenantDomain: string) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
-}
-
-interface RegisterData {
-  email: string;
-  password: string;
-  name: string;
-  tenantName: string;
-  tenantDomain: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -39,39 +27,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const token = localStorage.getItem('token');
     if (token) {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      fetchProfile();
+      // For now, just set loading to false since we have a simple auth system
+      setLoading(false);
     } else {
       setLoading(false);
     }
   }, []);
 
-  const fetchProfile = async () => {
-    try {
-      const response = await api.get('/users/profile');
-      setUser(response.data);
-    } catch (error) {
-      localStorage.removeItem('token');
-      delete api.defaults.headers.common['Authorization'];
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const login = async (email: string, password: string, tenantDomain: string) => {
+  const login = async (username: string, password: string) => {
     const response = await api.post('/auth/login', {
-      email,
+      username,
       password,
-      tenantDomain,
     });
-
-    const { token, user } = response.data;
-    localStorage.setItem('token', token);
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    setUser(user);
-  };
-
-  const register = async (data: RegisterData) => {
-    const response = await api.post('/auth/register', data);
 
     const { token, user } = response.data;
     localStorage.setItem('token', token);
@@ -86,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

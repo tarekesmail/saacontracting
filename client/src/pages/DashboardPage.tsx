@@ -1,22 +1,20 @@
 import { useQuery } from 'react-query';
 import { api } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
-import { UsersIcon, UserGroupIcon, BriefcaseIcon, ClockIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
+import { UsersIcon, BriefcaseIcon, ClockIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function DashboardPage() {
   const { user } = useAuth();
   
   const { data: stats, isLoading } = useQuery('dashboard-stats', async () => {
-    const [laborers, groups, jobs] = await Promise.all([
+    const [laborers, jobs] = await Promise.all([
       api.get('/laborers?limit=1'),
-      api.get('/groups'),
       api.get('/jobs'),
     ]);
 
     return {
       totalLaborers: laborers.data.pagination.total,
-      totalGroups: groups.data.length,
       totalJobs: jobs.data.length,
       activeLaborers: laborers.data.laborers.length,
     };
@@ -42,13 +40,6 @@ export default function DashboardPage() {
       icon: UsersIcon,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100',
-    },
-    {
-      name: 'Labor Groups',
-      value: stats?.totalGroups || 0,
-      icon: UserGroupIcon,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
     },
     {
       name: 'Available Jobs',
@@ -116,7 +107,8 @@ export default function DashboardPage() {
                 <tr>
                   <th className="table-header-cell">Name</th>
                   <th className="table-header-cell">ID Number</th>
-                  <th className="table-header-cell">Group</th>
+                  <th className="table-header-cell">Salary Rate</th>
+                  <th className="table-header-cell">Org Rate</th>
                   <th className="table-header-cell">Job</th>
                   <th className="table-header-cell">Start Date</th>
                 </tr>
@@ -127,11 +119,14 @@ export default function DashboardPage() {
                     <td className="table-cell font-medium">{laborer.name}</td>
                     <td className="table-cell">{laborer.idNumber}</td>
                     <td className="table-cell">
-                      {laborer.group ? (
-                        <span className="badge badge-primary">{laborer.group.name}</span>
-                      ) : (
-                        <span className="text-gray-400">No group</span>
-                      )}
+                      <span className="text-xs font-bold text-blue-600">
+                        {parseFloat(laborer.salaryRate).toFixed(2)} SAR
+                      </span>
+                    </td>
+                    <td className="table-cell">
+                      <span className="text-xs font-bold text-green-600">
+                        {parseFloat(laborer.orgRate).toFixed(2)} SAR
+                      </span>
                     </td>
                     <td className="table-cell">
                       {laborer.job ? (

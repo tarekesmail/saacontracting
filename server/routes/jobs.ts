@@ -7,26 +7,18 @@ const router = express.Router();
 const prisma = new PrismaClient();
 
 const jobSchema = z.object({
-  name: z.string().min(1),
-  pricePerHour: z.number().positive(),
-  groupId: z.string().min(1)
+  name: z.string().min(1)
 });
 
 // Get all jobs for current tenant
 router.get('/', async (req: AuthRequest, res, next) => {
   try {
-    const { groupId } = req.query;
-
     const jobs = await prisma.job.findMany({
       where: {
         isActive: true,
-        ...(groupId && { groupId: groupId as string }),
-        group: {
-          tenantId: req.user!.tenantId!
-        }
+        tenantId: req.user!.tenantId!
       },
       include: {
-        group: true,
         _count: {
           select: { laborers: true }
         }
@@ -45,22 +37,12 @@ router.post('/', async (req: AuthRequest, res, next) => {
   try {
     const data = jobSchema.parse(req.body);
 
-    // Verify group belongs to tenant
-    const group = await prisma.laborGroup.findFirst({
-      where: {
-        id: data.groupId,
-        tenantId: req.user!.tenantId!
-      }
-    });
-
-    if (!group) {
-      return res.status(404).json({ error: 'Group not found' });
-    }
-
     const job = await prisma.job.create({
-      data,
+      data: {
+        ...data,
+        tenantId: req.user!.tenantId!
+      },
       include: {
-        group: true,
         _count: {
           select: { laborers: true }
         }
@@ -82,9 +64,7 @@ router.put('/:id', async (req: AuthRequest, res, next) => {
     const existingJob = await prisma.job.findFirst({
       where: {
         id: req.params.id,
-        group: {
-          tenantId: req.user!.tenantId!
-        }
+        tenantId: req.user!.tenantId!
       }
     });
 
@@ -96,7 +76,6 @@ router.put('/:id', async (req: AuthRequest, res, next) => {
       where: { id: req.params.id },
       data,
       include: {
-        group: true,
         _count: {
           select: { laborers: true }
         }
@@ -115,9 +94,7 @@ router.delete('/:id', async (req: AuthRequest, res, next) => {
     const job = await prisma.job.findFirst({
       where: {
         id: req.params.id,
-        group: {
-          tenantId: req.user!.tenantId!
-        }
+        tenantId: req.user!.tenantId!
       }
     });
 

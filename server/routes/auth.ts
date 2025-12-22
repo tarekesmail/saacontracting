@@ -60,7 +60,7 @@ router.get('/tenants', async (req, res, next) => {
       include: {
         _count: {
           select: {
-            laborGroups: true,
+            jobs: true,
             laborers: true
           }
         }
@@ -134,8 +134,8 @@ router.delete('/tenants/:id', async (req, res, next) => {
       include: {
         _count: {
           select: {
-            laborGroups: true,
-            laborers: true
+            laborers: true,
+            jobs: true
           }
         }
       }
@@ -146,9 +146,9 @@ router.delete('/tenants/:id', async (req, res, next) => {
     }
 
     // Check if tenant has associated data
-    if (tenant._count.laborGroups > 0 || tenant._count.laborers > 0) {
+    if (tenant._count.jobs > 0 || tenant._count.laborers > 0) {
       return res.status(400).json({ 
-        error: 'Cannot delete tenant with existing data. Please remove all laborers and groups first.' 
+        error: 'Cannot delete tenant with existing data. Please remove all laborers and jobs first.' 
       });
     }
 

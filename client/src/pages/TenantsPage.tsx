@@ -14,7 +14,7 @@ interface Tenant {
   name: string;
   createdAt: string;
   _count?: {
-    laborGroups: number;
+    jobs: number;
     laborers: number;
   };
 }
@@ -201,8 +201,8 @@ export default function TenantsPage() {
               {tenant._count && (
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Labor Groups:</span>
-                    <span className="font-medium">{tenant._count.laborGroups}</span>
+                    <span className="text-gray-500">Jobs:</span>
+                    <span className="font-medium">{tenant._count.jobs}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Laborers:</span>

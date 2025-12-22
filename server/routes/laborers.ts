@@ -10,10 +10,10 @@ const laborerSchema = z.object({
   name: z.string().min(1),
   idNumber: z.string().min(1),
   phoneNumber: z.string().min(1),
-  email: z.string().email().optional(),
   startDate: z.string().transform((str) => new Date(str)),
-  groupId: z.string().optional(),
-  jobId: z.string().optional()
+  salaryRate: z.number().positive('Salary rate must be positive'),
+  orgRate: z.number().positive('Organization rate must be positive'),
+  jobId: z.string().min(1) // Made required
 });
 
 // Get all laborers for current tenant
@@ -28,8 +28,7 @@ router.get('/', async (req: AuthRequest, res, next) => {
       ...(search && {
         OR: [
           { name: { contains: search as string, mode: 'insensitive' as const } },
-          { idNumber: { contains: search as string, mode: 'insensitive' as const } },
-          { email: { contains: search as string, mode: 'insensitive' as const } }
+          { idNumber: { contains: search as string, mode: 'insensitive' as const } }
         ]
       })
     };
@@ -38,7 +37,6 @@ router.get('/', async (req: AuthRequest, res, next) => {
       prisma.laborer.findMany({
         where,
         include: {
-          group: true,
           job: true
         },
         skip,
@@ -67,13 +65,24 @@ router.post('/', async (req: AuthRequest, res, next) => {
   try {
     const data = laborerSchema.parse(req.body);
 
+    // Verify job belongs to tenant
+    const job = await prisma.job.findFirst({
+      where: {
+        id: data.jobId,
+        tenantId: req.user!.tenantId!
+      }
+    });
+
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
     const laborer = await prisma.laborer.create({
       data: {
         ...data,
         tenantId: req.user!.tenantId!
       },
       include: {
-        group: true,
         job: true
       }
     });
@@ -107,7 +116,6 @@ router.put('/:id', async (req: AuthRequest, res, next) => {
         tenantId: req.user!.tenantId!
       },
       include: {
-        group: true,
         job: true
       }
     });

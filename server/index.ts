@@ -5,7 +5,6 @@ import compression from 'compression';
 import path from 'path';
 import { authRoutes } from './routes/auth';
 import { laborerRoutes } from './routes/laborers';
-import { groupRoutes } from './routes/groups';
 import { jobRoutes } from './routes/jobs';
 import { errorHandler } from './middleware/errorHandler';
 import { authenticateToken, requireTenant } from './middleware/auth';
@@ -43,7 +42,6 @@ app.use(express.urlencoded({ extended: true }));
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/laborers', authenticateToken, requireTenant, laborerRoutes);
-app.use('/api/groups', authenticateToken, requireTenant, groupRoutes);
 app.use('/api/jobs', authenticateToken, requireTenant, jobRoutes);
 
 // Favicon route

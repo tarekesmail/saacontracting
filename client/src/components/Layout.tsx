@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { api } from '../lib/api';
+import LoadingSpinner from './LoadingSpinner';
+import toast from 'react-hot-toast';
 import {
   HomeIcon,
   UsersIcon,
-  UserGroupIcon,
   BriefcaseIcon,
   ArrowRightOnRectangleIcon,
   Bars3Icon,
@@ -12,21 +14,29 @@ import {
   BuildingOfficeIcon,
   ChevronDownIcon,
   Cog6ToothIcon,
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
   { name: 'Laborers', href: '/laborers', icon: UsersIcon },
-  { name: 'Groups', href: '/groups', icon: UserGroupIcon },
   { name: 'Jobs', href: '/jobs', icon: BriefcaseIcon },
   { name: 'Tenants', href: '/tenants', icon: Cog6ToothIcon },
 ];
 
+interface Tenant {
+  id: string;
+  name: string;
+}
+
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tenantDropdownOpen, setTenantDropdownOpen] = useState(false);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [loadingTenants, setLoadingTenants] = useState(false);
+  const [switchingTenant, setSwitchingTenant] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { user, logout } = useAuth();
+  const { user, login, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -44,9 +54,57 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const switchTenant = () => {
+  // Fetch tenants when dropdown is opened
+  const fetchTenants = async (force = false) => {
+    if (tenants.length > 0 && !force) return; // Already loaded
+    
+    setLoadingTenants(true);
+    try {
+      const response = await api.get('/auth/tenants');
+      setTenants(response.data);
+    } catch (error) {
+      toast.error('Failed to load tenants');
+    } finally {
+      setLoadingTenants(false);
+    }
+  };
+
+  const handleTenantDropdownToggle = () => {
+    if (!tenantDropdownOpen) {
+      fetchTenants();
+    }
+    setTenantDropdownOpen(!tenantDropdownOpen);
+  };
+
+  const refreshTenants = () => {
+    fetchTenants(true);
+  };
+
+  const switchToTenant = async (tenantId: string) => {
+    if (!user) return;
+    
+    setSwitchingTenant(tenantId);
+    setTenantDropdownOpen(false);
+    
+    try {
+      await login(user.username, 'saacontracting2024', tenantId);
+      toast.success('Switched tenant successfully!');
+    } catch (error) {
+      toast.error('Failed to switch tenant');
+    } finally {
+      setSwitchingTenant(null);
+    }
+  };
+
+  const goToTenantSelection = () => {
     setTenantDropdownOpen(false);
     navigate('/tenant-selection');
+  };
+
+  const handleLogout = () => {
+    setTenants([]); // Clear tenant list
+    setTenantDropdownOpen(false);
+    logout();
   };
 
   return (
@@ -132,7 +190,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 {user?.tenant && (
                   <div className="relative" ref={dropdownRef}>
                     <button
-                      onClick={() => setTenantDropdownOpen(!tenantDropdownOpen)}
+                      onClick={handleTenantDropdownToggle}
                       className="flex items-center space-x-2 px-3 py-2 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
                     >
                       <BuildingOfficeIcon className="h-4 w-4 text-primary-600" />
@@ -144,14 +202,79 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     
                     {/* Dropdown Menu */}
                     {tenantDropdownOpen && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                      <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
                         <div className="py-1">
-                          <button
-                            onClick={switchTenant}
-                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            Switch Tenant
-                          </button>
+                          {/* Current Tenant Header */}
+                          <div className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-100">
+                            Current Tenant
+                          </div>
+                          <div className="px-4 py-2 bg-primary-50">
+                            <div className="flex items-center">
+                              <BuildingOfficeIcon className="h-4 w-4 text-primary-600 mr-2" />
+                              <span className="text-sm font-medium text-primary-900">{user.tenant.name}</span>
+                            </div>
+                          </div>
+                          
+                          {/* Available Tenants */}
+                          <div className="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-100">
+                            Switch to
+                          </div>
+                          
+                          {loadingTenants ? (
+                            <div className="px-4 py-3 flex items-center justify-center">
+                              <LoadingSpinner size="sm" />
+                              <span className="ml-2 text-sm text-gray-500">Loading tenants...</span>
+                            </div>
+                          ) : (
+                            <>
+                              {tenants
+                                .filter(tenant => tenant.id !== user.tenant?.id)
+                                .map((tenant) => (
+                                <button
+                                  key={tenant.id}
+                                  onClick={() => switchToTenant(tenant.id)}
+                                  disabled={switchingTenant === tenant.id}
+                                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center">
+                                      <BuildingOfficeIcon className="h-4 w-4 text-gray-400 mr-2" />
+                                      <span>{tenant.name}</span>
+                                    </div>
+                                    {switchingTenant === tenant.id && (
+                                      <LoadingSpinner size="sm" />
+                                    )}
+                                  </div>
+                                </button>
+                              ))}
+                              
+                              {tenants.filter(tenant => tenant.id !== user.tenant?.id).length === 0 && (
+                                <div className="px-4 py-2 text-sm text-gray-500">
+                                  No other tenants available
+                                </div>
+                              )}
+                            </>
+                          )}
+                          
+                          {/* Manage Tenants Link */}
+                          <div className="border-t border-gray-100">
+                            <button
+                              onClick={refreshTenants}
+                              disabled={loadingTenants}
+                              className="block w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+                            >
+                              <div className="flex items-center">
+                                <ArrowPathIcon className={`h-4 w-4 mr-2 ${loadingTenants ? 'animate-spin' : ''}`} />
+                                Refresh List
+                              </div>
+                            </button>
+                            <button
+                              onClick={goToTenantSelection}
+                              className="block w-full text-left px-4 py-2 text-sm text-primary-600 hover:bg-gray-100"
+                            >
+                              Manage Tenants
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -165,7 +288,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 
                 {/* Logout Button */}
                 <button
-                  onClick={logout}
+                  onClick={handleLogout}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
                   title="Logout"
                 >

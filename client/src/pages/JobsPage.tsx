@@ -6,13 +6,11 @@ import { z } from 'zod';
 import { api } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { PlusIcon, PencilIcon, TrashIcon, BriefcaseIcon, BanknotesIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilIcon, TrashIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
 const jobSchema = z.object({
   name: z.string().min(1, 'Job name is required'),
-  pricePerHour: z.number().positive('Price per hour must be positive'),
-  groupId: z.string().min(1, 'Group is required'),
 });
 
 type JobForm = z.infer<typeof jobSchema>;
@@ -20,22 +18,14 @@ type JobForm = z.infer<typeof jobSchema>;
 export default function JobsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<any>(null);
-  const [selectedGroup, setSelectedGroup] = useState<string>('');
-  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   // Since we have a single admin login, all authenticated users can edit and delete
   const canEdit = true;
   const canDelete = true;
 
-  const { data: jobs, isLoading } = useQuery(['jobs', selectedGroup], async () => {
-    const params = selectedGroup ? `?groupId=${selectedGroup}` : '';
-    const response = await api.get(`/jobs${params}`);
-    return response.data;
-  });
-
-  const { data: groups } = useQuery('groups', async () => {
-    const response = await api.get('/groups');
+  const { data: jobs, isLoading } = useQuery(['jobs'], async () => {
+    const response = await api.get('/jobs');
     return response.data;
   });
 
@@ -95,8 +85,6 @@ export default function JobsPage() {
     setEditingJob(job);
     reset({
       name: job.name,
-      pricePerHour: parseFloat(job.pricePerHour),
-      groupId: job.groupId,
     });
     setIsModalOpen(true);
   };
@@ -127,7 +115,7 @@ export default function JobsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Jobs</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Manage job positions and their hourly rates
+            Manage job positions
           </p>
         </div>
         {canEdit && (
@@ -136,22 +124,6 @@ export default function JobsPage() {
             Add Job
           </button>
         )}
-      </div>
-
-      {/* Filter by Group */}
-      <div className="flex space-x-4">
-        <select
-          value={selectedGroup}
-          onChange={(e) => setSelectedGroup(e.target.value)}
-          className="input max-w-xs"
-        >
-          <option value="">All Groups</option>
-          {groups?.map((group: any) => (
-            <option key={group.id} value={group.id}>
-              {group.name}
-            </option>
-          ))}
-        </select>
       </div>
 
       {/* Jobs Grid */}
@@ -165,7 +137,6 @@ export default function JobsPage() {
                 </div>
                 <div className="ml-3">
                   <h3 className="text-lg font-medium text-gray-900">{job.name}</h3>
-                  <p className="text-sm text-gray-500">{job.group.name}</p>
                 </div>
               </div>
               {(canEdit || canDelete) && (
@@ -191,23 +162,9 @@ export default function JobsPage() {
             </div>
 
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center text-sm text-gray-500">
-                  <BanknotesIcon className="h-4 w-4 mr-1" />
-                  Hourly Rate
-                </div>
-                <span className="text-lg font-bold text-green-600">
-                  {parseFloat(job.pricePerHour).toFixed(2)} SAR
-                </span>
-              </div>
-              
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Assigned Laborers:</span>
                 <span className="font-medium">{job._count.laborers}</span>
-              </div>
-
-              <div className="pt-2 border-t border-gray-200">
-                <span className="badge badge-primary">{job.group.name}</span>
               </div>
             </div>
           </div>
@@ -219,12 +176,9 @@ export default function JobsPage() {
           <BriefcaseIcon className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No jobs</h3>
           <p className="mt-1 text-sm text-gray-500">
-            {selectedGroup 
-              ? 'No jobs found for the selected group.' 
-              : 'Get started by creating your first job position.'
-            }
+            Get started by creating your first job position.
           </p>
-          {canEdit && !selectedGroup && (
+          {canEdit && (
             <div className="mt-6">
               <button onClick={openCreateModal} className="btn-primary">
                 <PlusIcon className="h-4 w-4 mr-2" />
@@ -253,32 +207,6 @@ export default function JobsPage() {
                     placeholder="e.g., Senior Driver, Security Guard"
                   />
                   {errors.name && <p className="text-red-600 text-sm">{errors.name.message}</p>}
-                </div>
-
-                <div>
-                  <label className="label">Price Per Hour (SAR)</label>
-                  <input
-                    {...register('pricePerHour', { valueAsNumber: true })}
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    className="input"
-                    placeholder="15.00"
-                  />
-                  {errors.pricePerHour && <p className="text-red-600 text-sm">{errors.pricePerHour.message}</p>}
-                </div>
-
-                <div>
-                  <label className="label">Group</label>
-                  <select {...register('groupId')} className="input">
-                    <option value="">Select a group</option>
-                    {groups?.map((group: any) => (
-                      <option key={group.id} value={group.id}>
-                        {group.name}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.groupId && <p className="text-red-600 text-sm">{errors.groupId.message}</p>}
                 </div>
 
                 <div className="flex justify-end space-x-3 pt-4">

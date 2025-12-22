@@ -13,10 +13,10 @@ const laborerSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   idNumber: z.string().min(1, 'ID Number is required'),
   phoneNumber: z.string().min(1, 'Phone number is required'),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
   startDate: z.string().min(1, 'Start date is required'),
-  groupId: z.string().optional(),
-  jobId: z.string().optional(),
+  salaryRate: z.number().positive('Salary rate must be positive'),
+  orgRate: z.number().positive('Organization rate must be positive'),
+  jobId: z.string().min(1, 'Job is required'), // Made required
 });
 
 type LaborerForm = z.infer<typeof laborerSchema>;
@@ -41,11 +41,6 @@ export default function LaborersPage() {
     }
   );
 
-  const { data: groups } = useQuery('groups', async () => {
-    const response = await api.get('/groups');
-    return response.data;
-  });
-
   const { data: jobs } = useQuery('jobs', async () => {
     const response = await api.get('/jobs');
     return response.data;
@@ -55,14 +50,10 @@ export default function LaborersPage() {
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors },
   } = useForm<LaborerForm>({
     resolver: zodResolver(laborerSchema),
   });
-
-  const selectedGroupId = watch('groupId');
-  const availableJobs = jobs?.filter((job: any) => job.groupId === selectedGroupId) || [];
 
   const createMutation = useMutation(
     (data: LaborerForm) => api.post('/laborers', data),
@@ -100,17 +91,10 @@ export default function LaborersPage() {
   );
 
   const onSubmit = (data: LaborerForm) => {
-    const formData = {
-      ...data,
-      email: data.email || undefined,
-      groupId: data.groupId || undefined,
-      jobId: data.jobId || undefined,
-    };
-
     if (editingLaborer) {
-      updateMutation.mutate({ id: editingLaborer.id, data: formData });
+      updateMutation.mutate({ id: editingLaborer.id, data });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(data);
     }
   };
 
@@ -120,9 +104,9 @@ export default function LaborersPage() {
       name: laborer.name,
       idNumber: laborer.idNumber,
       phoneNumber: laborer.phoneNumber,
-      email: laborer.email || '',
       startDate: new Date(laborer.startDate).toISOString().split('T')[0],
-      groupId: laborer.groupId || '',
+      salaryRate: parseFloat(laborer.salaryRate),
+      orgRate: parseFloat(laborer.orgRate),
       jobId: laborer.jobId || '',
     });
     setIsModalOpen(true);
@@ -154,7 +138,7 @@ export default function LaborersPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Laborers</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Manage your workforce and their assignments
+            Manage your workforce with salary and organization rates
           </p>
         </div>
         {canEdit && (
@@ -185,8 +169,18 @@ export default function LaborersPage() {
               <th className="table-header-cell">Name</th>
               <th className="table-header-cell">ID Number</th>
               <th className="table-header-cell">Phone</th>
-              <th className="table-header-cell">Email</th>
-              <th className="table-header-cell">Group</th>
+              <th className="table-header-cell">
+                <div className="flex flex-col">
+                  <span>Salary Rate</span>
+                  <span className="text-xs text-gray-400 font-normal">(Laborer Pay)</span>
+                </div>
+              </th>
+              <th className="table-header-cell">
+                <div className="flex flex-col">
+                  <span>Org Rate</span>
+                  <span className="text-xs text-gray-400 font-normal">(Client Charge)</span>
+                </div>
+              </th>
               <th className="table-header-cell">Job</th>
               <th className="table-header-cell">Start Date</th>
               {(canEdit || canDelete) && <th className="table-header-cell">Actions</th>}
@@ -198,13 +192,22 @@ export default function LaborersPage() {
                 <td className="table-cell font-medium">{laborer.name}</td>
                 <td className="table-cell">{laborer.idNumber}</td>
                 <td className="table-cell">{laborer.phoneNumber}</td>
-                <td className="table-cell">{laborer.email || '-'}</td>
                 <td className="table-cell">
-                  {laborer.group ? (
-                    <span className="badge badge-primary">{laborer.group.name}</span>
-                  ) : (
-                    <span className="text-gray-400">No group</span>
-                  )}
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-blue-600">
+                      {parseFloat(laborer.salaryRate).toFixed(2)} SAR
+                    </span>
+                  </div>
+                </td>
+                <td className="table-cell">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-green-600">
+                      {parseFloat(laborer.orgRate).toFixed(2)} SAR
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      +{(parseFloat(laborer.orgRate) - parseFloat(laborer.salaryRate)).toFixed(2)} profit
+                    </span>
+                  </div>
                 </td>
                 <td className="table-cell">
                   {laborer.job ? (
@@ -298,39 +301,50 @@ export default function LaborersPage() {
                 </div>
 
                 <div>
-                  <label className="label">Email (Optional)</label>
-                  <input {...register('email')} type="email" className="input" />
-                  {errors.email && <p className="text-red-600 text-sm">{errors.email.message}</p>}
-                </div>
-
-                <div>
                   <label className="label">Start Date</label>
                   <input {...register('startDate')} type="date" className="input" />
                   {errors.startDate && <p className="text-red-600 text-sm">{errors.startDate.message}</p>}
                 </div>
 
                 <div>
-                  <label className="label">Group (Optional)</label>
-                  <select {...register('groupId')} className="input">
-                    <option value="">Select a group</option>
-                    {groups?.map((group: any) => (
-                      <option key={group.id} value={group.id}>
-                        {group.name}
-                      </option>
-                    ))}
-                  </select>
+                  <label className="label">Salary Rate (SAR/hour)</label>
+                  <input
+                    {...register('salaryRate', { valueAsNumber: true })}
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className="input"
+                    placeholder="20.00"
+                  />
+                  {errors.salaryRate && <p className="text-red-600 text-sm">{errors.salaryRate.message}</p>}
+                  <p className="text-xs text-gray-500 mt-1">Amount paid to the laborer</p>
                 </div>
 
                 <div>
-                  <label className="label">Job (Optional)</label>
-                  <select {...register('jobId')} className="input" disabled={!selectedGroupId}>
+                  <label className="label">Organization Rate (SAR/hour)</label>
+                  <input
+                    {...register('orgRate', { valueAsNumber: true })}
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className="input"
+                    placeholder="35.00"
+                  />
+                  {errors.orgRate && <p className="text-red-600 text-sm">{errors.orgRate.message}</p>}
+                  <p className="text-xs text-gray-500 mt-1">Amount charged to the client organization</p>
+                </div>
+
+                <div>
+                  <label className="label">Job</label>
+                  <select {...register('jobId')} className="input">
                     <option value="">Select a job</option>
-                    {availableJobs.map((job: any) => (
+                    {jobs?.map((job: any) => (
                       <option key={job.id} value={job.id}>
-                        {job.name} ({job.pricePerHour} SAR/hr)
+                        {job.name}
                       </option>
                     ))}
                   </select>
+                  {errors.jobId && <p className="text-red-600 text-sm">{errors.jobId.message}</p>}
                 </div>
 
                 <div className="flex justify-end space-x-3 pt-4">

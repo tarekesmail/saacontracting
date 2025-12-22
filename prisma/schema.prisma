@@ -13,27 +13,26 @@ model Tenant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  laborers    Laborer[]
-  laborGroups LaborGroup[]
+  laborers Laborer[]
+  jobs     Job[]
 
   @@map("tenants")
 }
 
 model Laborer {
-  id          String    @id @default(cuid())
-  name        String
-  idNumber    String
-  phoneNumber String
-  email       String?
-  startDate   DateTime
-  tenantId    String
-  groupId     String?
-  jobId       String?
-  isActive    Boolean   @default(true)
+  id           String    @id @default(cuid())
+  name         String
+  idNumber     String
+  phoneNumber  String
+  startDate    DateTime
+  salaryRate   Decimal   @db.Decimal(10, 2) // What the laborer gets paid (SAR/hour)
+  orgRate      Decimal   @db.Decimal(10, 2) // What we charge the organization (SAR/hour)
+  tenantId     String
+  jobId        String    // Made required
+  isActive     Boolean   @default(true)
 
-  tenant Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  group  LaborGroup? @relation(fields: [groupId], references: [id])
-  job    Job?        @relation(fields: [jobId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  job    Job    @relation(fields: [jobId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -42,36 +41,18 @@ model Laborer {
   @@map("laborers")
 }
 
-model LaborGroup {
+model Job {
   id       String  @id @default(cuid())
   name     String
-  tenantId String
+  tenantId String  // Jobs now belong directly to tenants
   isActive Boolean @default(true)
 
   tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  jobs     Job[]
   laborers Laborer[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([tenantId, name])
-  @@map("labor_groups")
-}
-
-model Job {
-  id           String  @id @default(cuid())
-  name         String
-  pricePerHour Decimal @db.Decimal(10, 2)
-  groupId      String
-  isActive     Boolean @default(true)
-
-  group    LaborGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  laborers Laborer[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([groupId, name])
   @@map("jobs")
 }

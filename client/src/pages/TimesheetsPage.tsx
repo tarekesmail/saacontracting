@@ -336,16 +336,15 @@ export default function TimesheetsPage() {
                       />
                     </td>
                     <td className="table-cell">
-                      <input
-                        type="number"
-                        min="1"
-                        max="5"
-                        step="0.1"
+                      <select
                         value={entry.overtimeMultiplier}
-                        onChange={(e) => updateTimesheetEntry(index, 'overtimeMultiplier', parseFloat(e.target.value) || 1.5)}
-                        className="input w-16 text-center text-sm"
-                        placeholder="1.5"
-                      />
+                        onChange={(e) => updateTimesheetEntry(index, 'overtimeMultiplier', parseFloat(e.target.value))}
+                        className="input text-sm w-20"
+                      >
+                        <option value={1.0}>1x</option>
+                        <option value={1.5}>1.5x</option>
+                        <option value={2.0}>2x</option>
+                      </select>
                     </td>
                     <td className="table-cell font-medium">
                       {totalHours.toFixed(1)}h

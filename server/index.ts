@@ -20,11 +20,14 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
       scriptSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
     },
   },
+  crossOriginEmbedderPolicy: false,
 }));
 
 // Rate limiting
@@ -36,7 +39,10 @@ app.use(limiter);
 
 // Middleware
 app.use(compression());
-app.use(cors());
+app.use(cors({
+  origin: ['http://saacontracting.com', 'https://saacontracting.com', 'http://www.saacontracting.com', 'https://www.saacontracting.com'],
+  credentials: true
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 

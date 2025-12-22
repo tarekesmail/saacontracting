@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Navigation - SAA Contracting</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-info { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔍 SAA Contracting Navigation Debug</h1>
+    
+    <div class="debug-info">
+        <h3>Quick Tests:</h3>
+        <button onclick="testDirectAccess()">Test Direct P&L Access</button>
+        <button onclick="checkConsoleErrors()">Check Console Errors</button>
+        <button onclick="inspectMenu()">Inspect Menu Structure</button>
+    </div>
+
+    <div id="results"></div>
+
+    <div class="debug-info">
+        <h3>Manual Steps:</h3>
+        <ol>
+            <li><strong>Clear Browser Cache:</strong> Press Ctrl+F5 (or Cmd+Shift+R on Mac)</li>
+            <li><strong>Check Developer Tools:</strong> Press F12 and look for errors in Console tab</li>
+            <li><strong>Try Direct URL:</strong> Go to <a href="/profit-loss" target="_blank">http://saacontracting.com/profit-loss</a></li>
+            <li><strong>Check Network Tab:</strong> See if JavaScript files are loading properly</li>
+            <li><strong>Inspect Element:</strong> Right-click on sidebar and inspect the navigation HTML</li>
+        </ol>
+    </div>
+
+    <div class="debug-info">
+        <h3>Expected Menu Structure:</h3>
+        <ul>
+            <li>Dashboard</li>
+            <li>Laborers</li>
+            <li>Jobs</li>
+            <li>Timesheets</li>
+            <li>Expenses (dropdown)</li>
+            <li>Reports</li>
+            <li><strong>P&L Report</strong> ← Should be here</li>
+            <li>Tenants</li>
+        </ul>
+    </div>
+
+    <script>
+        function testDirectAccess() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="debug-info">Testing direct access to /profit-loss...</div>';
+            
+            fetch('/profit-loss')
+                .then(response => {
+                    if (response.ok) {
+                        results.innerHTML += '<div class="success">✅ /profit-loss endpoint is accessible</div>';
+                        window.open('/profit-loss', '_blank');
+                    } else {
+                        results.innerHTML += '<div class="error">❌ /profit-loss returned status: ' + response.status + '</div>';
+                    }
+                })
+                .catch(error => {
+                    results.innerHTML += '<div class="error">❌ Error accessing /profit-loss: ' + error.message + '</div>';
+                });
+        }
+
+        function checkConsoleErrors() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="debug-info">Check the browser console (F12) for any JavaScript errors. Common issues:<br>- Import errors<br>- Missing dependencies<br>- Network failures</div>';
+        }
+
+        function inspectMenu() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="debug-info">Right-click on the sidebar menu and select "Inspect Element" to see the actual HTML structure. Look for:<br>- Missing menu items<br>- Hidden elements (display: none)<br>- JavaScript errors in console</div>';
+        }
+
+        // Auto-check for common issues
+        window.addEventListener('load', function() {
+            // Check if we can access the main app
+            fetch('/')
+                .then(response => {
+                    if (response.ok) {
+                        document.getElementById('results').innerHTML = '<div class="success">✅ Main application is accessible</div>';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('results').innerHTML = '<div class="error">❌ Cannot access main application: ' + error.message + '</div>';
+                });
+        });
+    </script>
+</body>
+</html>

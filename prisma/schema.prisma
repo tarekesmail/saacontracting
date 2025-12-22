@@ -13,8 +13,9 @@ model Tenant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  laborers Laborer[]
-  jobs     Job[]
+  laborers   Laborer[]
+  jobs       Job[]
+  timesheets Timesheet[]
 
   @@map("tenants")
 }
@@ -31,8 +32,9 @@ model Laborer {
   jobId        String    // Made required
   isActive     Boolean   @default(true)
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  job    Job    @relation(fields: [jobId], references: [id])
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  job        Job         @relation(fields: [jobId], references: [id])
+  timesheets Timesheet[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -47,12 +49,35 @@ model Job {
   tenantId String  // Jobs now belong directly to tenants
   isActive Boolean @default(true)
 
-  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  laborers Laborer[]
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  laborers   Laborer[]
+  timesheets Timesheet[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([tenantId, name])
   @@map("jobs")
+}
+
+model Timesheet {
+  id         String   @id @default(cuid())
+  date       DateTime @db.Date
+  hoursWorked Decimal @db.Decimal(5, 2) // Hours worked (e.g., 8.5)
+  overtime   Decimal  @db.Decimal(5, 2) @default(0) // Overtime hours
+  notes      String?  // Optional notes
+  
+  laborerId  String
+  jobId      String
+  tenantId   String
+  
+  laborer    Laborer @relation(fields: [laborerId], references: [id], onDelete: Cascade)
+  job        Job     @relation(fields: [jobId], references: [id])
+  tenant     Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  @@unique([laborerId, date])
+  @@map("timesheets")
 }

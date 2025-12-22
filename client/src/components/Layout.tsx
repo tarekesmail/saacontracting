@@ -15,12 +15,14 @@ import {
   ChevronDownIcon,
   Cog6ToothIcon,
   ArrowPathIcon,
+  ClockIcon,
 } from '@heroicons/react/24/outline';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
   { name: 'Laborers', href: '/laborers', icon: UsersIcon },
   { name: 'Jobs', href: '/jobs', icon: BriefcaseIcon },
+  { name: 'Timesheets', href: '/timesheets', icon: ClockIcon },
   { name: 'Tenants', href: '/tenants', icon: Cog6ToothIcon },
 ];
 

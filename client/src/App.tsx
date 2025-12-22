@@ -6,6 +6,7 @@ import TenantSelectionPage from './pages/TenantSelectionPage';
 import DashboardPage from './pages/DashboardPage';
 import LaborersPage from './pages/LaborersPage';
 import JobsPage from './pages/JobsPage';
+import TimesheetsPage from './pages/TimesheetsPage';
 import TenantsPage from './pages/TenantsPage';
 import LoadingSpinner from './components/LoadingSpinner';
 
@@ -45,6 +46,7 @@ function App() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/laborers" element={<LaborersPage />} />
         <Route path="/jobs" element={<JobsPage />} />
+        <Route path="/timesheets" element={<TimesheetsPage />} />
         <Route path="/tenants" element={<TenantsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

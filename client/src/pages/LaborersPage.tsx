@@ -301,46 +301,6 @@ export default function LaborersPage() {
         showAdvanced={true}
       />
 
-      {/* Quick Search Shortcuts */}
-      <div className="flex flex-wrap gap-2">
-        <span className="text-sm text-gray-500 self-center">Quick filters:</span>
-        <button
-          type="button"
-          onClick={() => handleSearch({ jobId: jobs?.find((j: any) => j.name === 'Flagman')?.id || '' })}
-          className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
-        >
-          Flagman
-        </button>
-        <button
-          type="button"
-          onClick={() => handleSearch({ jobId: jobs?.find((j: any) => j.name === 'Labour')?.id || '' })}
-          className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-full hover:bg-green-200"
-        >
-          Labour
-        </button>
-        <button
-          type="button"
-          onClick={() => handleSearch({ salaryRateMin: '10' })}
-          className="px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200"
-        >
-          Salary ≥ 10 SAR
-        </button>
-        <button
-          type="button"
-          onClick={() => handleSearch({ startDateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] })}
-          className="px-3 py-1 text-xs bg-orange-100 text-orange-700 rounded-full hover:bg-orange-200"
-        >
-          New (Last 30 days)
-        </button>
-        <button
-          type="button"
-          onClick={() => handleSearch({})}
-          className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200"
-        >
-          Clear All
-        </button>
-      </div>
-
       {/* Results Summary */}
       {laborersData && (
         <div className="flex justify-between items-center text-sm text-gray-600">

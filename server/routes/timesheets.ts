@@ -10,7 +10,7 @@ const timesheetSchema = z.object({
   date: z.string().transform((str) => new Date(str)),
   hoursWorked: z.number().min(0).max(24),
   overtime: z.number().min(0).max(24).default(0),
-  overtimeMultiplier: z.number().min(1).max(5).default(1.5), // 1x to 5x multiplier
+  overtimeMultiplier: z.number().min(1).max(5).nullable().optional(), // Nullable when no overtime
   notes: z.string().optional(),
   laborerId: z.string().min(1),
   jobId: z.string().min(1)
@@ -24,7 +24,7 @@ const bulkTimesheetSchema = z.object({
     jobId: z.string().min(1),
     hoursWorked: z.number().min(0).max(24),
     overtime: z.number().min(0).max(24).default(0),
-    overtimeMultiplier: z.number().min(1).max(5).optional(), // Individual multiplier (overrides default)
+    overtimeMultiplier: z.number().min(1).max(5).nullable().optional(), // Individual multiplier (overrides default)
     notes: z.string().optional()
   }))
 });
@@ -248,7 +248,10 @@ router.post('/bulk', async (req: AuthRequest, res, next) => {
       const timesheets = [];
       
       for (const timesheetData of data.timesheets) {
-        const overtimeMultiplier = timesheetData.overtimeMultiplier || data.defaultOvertimeMultiplier;
+        // Only set overtime multiplier if there are overtime hours
+        const overtimeMultiplier = timesheetData.overtime > 0 
+          ? (timesheetData.overtimeMultiplier || data.defaultOvertimeMultiplier)
+          : null;
         
         const timesheet = await tx.timesheet.upsert({
           where: {

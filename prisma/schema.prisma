@@ -67,7 +67,7 @@ model Timesheet {
   date            DateTime @db.Date
   hoursWorked     Decimal  @db.Decimal(5, 2) // Hours worked (e.g., 8.5)
   overtime        Decimal  @db.Decimal(5, 2) @default(0) // Overtime hours
-  overtimeMultiplier Decimal @db.Decimal(3, 1) @default(1.5) // Overtime multiplier (1.5, 2.0, 3.0, etc.)
+  overtimeMultiplier Decimal? @db.Decimal(3, 1) // Overtime multiplier (1.5, 2.0, 3.0, etc.) - null when no overtime
   notes           String?  // Optional notes
   
   laborerId  String

@@ -116,7 +116,7 @@ export default function TimesheetsPage() {
             ...entry,
             hoursWorked: parseFloat(existing.hoursWorked),
             overtime: parseFloat(existing.overtime),
-            overtimeMultiplier: parseFloat(existing.overtimeMultiplier || defaultOvertimeMultiplier),
+            overtimeMultiplier: existing.overtimeMultiplier ? parseFloat(existing.overtimeMultiplier) : defaultOvertimeMultiplier,
             notes: existing.notes || ''
           };
         }
@@ -129,6 +129,16 @@ export default function TimesheetsPage() {
   const updateTimesheetEntry = (index: number, field: keyof TimesheetEntry, value: any) => {
     const updated = [...timesheetEntries];
     updated[index] = { ...updated[index], [field]: value };
+    
+    // If overtime hours are set to 0, reset the overtime multiplier
+    if (field === 'overtime' && value === 0) {
+      updated[index].overtimeMultiplier = 1.5; // Reset to default but will be disabled
+    }
+    // If overtime hours are added and no multiplier is set, set default
+    else if (field === 'overtime' && value > 0 && !updated[index].overtimeMultiplier) {
+      updated[index].overtimeMultiplier = defaultOvertimeMultiplier;
+    }
+    
     setTimesheetEntries(updated);
   };
 
@@ -142,10 +152,20 @@ export default function TimesheetsPage() {
       return;
     }
 
+    // Process entries to set overtime multiplier to undefined when no overtime
+    const processedEntries = validEntries.map(entry => ({
+      laborerId: entry.laborerId,
+      jobId: entry.jobId,
+      hoursWorked: entry.hoursWorked,
+      overtime: entry.overtime,
+      overtimeMultiplier: entry.overtime > 0 ? entry.overtimeMultiplier : undefined,
+      notes: entry.notes
+    }));
+
     bulkCreateMutation.mutate({
       date: selectedDate,
       defaultOvertimeMultiplier: defaultOvertimeMultiplier,
-      timesheets: validEntries
+      timesheets: processedEntries
     });
   };
 
@@ -197,7 +217,7 @@ export default function TimesheetsPage() {
 
       {/* Date Selection and Quick Actions */}
       <div className="card p-6">
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-end gap-4">
           <div>
             <label className="label">Date</label>
             <input
@@ -295,10 +315,11 @@ export default function TimesheetsPage() {
                 const laborer = laborers?.find((l: any) => l.id === entry.laborerId);
                 const job = jobs?.find((j: any) => j.id === entry.jobId);
                 const totalHours = entry.hoursWorked + entry.overtime;
+                const effectiveOvertimeMultiplier = entry.overtime > 0 ? entry.overtimeMultiplier : 1;
                 const laborCost = (entry.hoursWorked * parseFloat(laborer?.salaryRate || '0')) + 
-                                 (entry.overtime * parseFloat(laborer?.salaryRate || '0') * entry.overtimeMultiplier);
+                                 (entry.overtime * parseFloat(laborer?.salaryRate || '0') * effectiveOvertimeMultiplier);
                 const clientCharge = (entry.hoursWorked * parseFloat(laborer?.orgRate || '0')) + 
-                                   (entry.overtime * parseFloat(laborer?.orgRate || '0') * entry.overtimeMultiplier);
+                                   (entry.overtime * parseFloat(laborer?.orgRate || '0') * effectiveOvertimeMultiplier);
 
                 return (
                   <tr key={entry.laborerId}>
@@ -337,10 +358,12 @@ export default function TimesheetsPage() {
                     </td>
                     <td className="table-cell">
                       <select
-                        value={entry.overtimeMultiplier}
+                        value={entry.overtime > 0 ? entry.overtimeMultiplier : ''}
                         onChange={(e) => updateTimesheetEntry(index, 'overtimeMultiplier', parseFloat(e.target.value))}
-                        className="input text-sm w-20"
+                        disabled={entry.overtime === 0}
+                        className={`input text-sm w-20 ${entry.overtime === 0 ? 'bg-gray-100 text-gray-400' : ''}`}
                       >
+                        <option value="">-</option>
                         <option value={1.0}>1x</option>
                         <option value={1.5}>1.5x</option>
                         <option value={2.0}>2x</option>

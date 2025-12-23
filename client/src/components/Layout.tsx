@@ -19,7 +19,7 @@ import {
   DocumentChartBarIcon,
   CurrencyDollarIcon,
   ChevronRightIcon,
-  PresentationChartBarIcon,
+  ChartBarSquareIcon,
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -37,20 +37,26 @@ const navigation = [
     ]
   },
   { name: 'Reports', href: '/reports', icon: DocumentChartBarIcon },
-  { name: 'P&L Report', href: '/profit-loss', icon: PresentationChartBarIcon },
+  { name: 'P&L Report', href: '/profit-loss', icon: ChartBarSquareIcon },
   { name: 'Tenants', href: '/tenants', icon: Cog6ToothIcon },
 ];
+
+interface Tenant {
+  id: string;
+  name: string;
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tenantDropdownOpen, setTenantDropdownOpen] = useState(false);
   const [expenseDropdownOpen, setExpenseDropdownOpen] = useState(false);
+  const [reportsDropdownOpen, setReportsDropdownOpen] = useState(false);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loadingTenants, setLoadingTenants] = useState(false);
   const [switchingTenant, setSwitchingTenant] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const expenseDropdownRef = useRef<HTMLDivElement>(null);
+  const reportsDropdownRef = useRef<HTMLDivElement>(null);
   const { user, login, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -63,6 +69,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       }
       if (expenseDropdownRef.current && !expenseDropdownRef.current.contains(event.target as Node)) {
         setExpenseDropdownOpen(false);
+      }
+      if (reportsDropdownRef.current && !reportsDropdownRef.current.contains(event.target as Node)) {
+        setReportsDropdownOpen(false);
       }
     };
 
@@ -123,22 +132,27 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     setTenants([]); // Clear tenant list
     setTenantDropdownOpen(false);
     setExpenseDropdownOpen(false);
+    setReportsDropdownOpen(false);
     logout();
   };
-
-  const isExpenseActive = location.pathname.startsWith('/expense');
 
   const NavigationItem = ({ item }: { item: any }) => {
     if (item.children) {
       const isActive = item.children.some((child: any) => location.pathname === child.href);
-      const isOpen = item.name === 'Expenses' ? expenseDropdownOpen : false;
+      const isOpen = item.name === 'Expenses' ? expenseDropdownOpen : 
+                    item.name === 'Reports' ? reportsDropdownOpen : false;
       
       return (
-        <div className="relative" ref={item.name === 'Expenses' ? expenseDropdownRef : undefined}>
+        <div className="relative" ref={
+          item.name === 'Expenses' ? expenseDropdownRef : 
+          item.name === 'Reports' ? reportsDropdownRef : undefined
+        }>
           <button
             onClick={() => {
               if (item.name === 'Expenses') {
                 setExpenseDropdownOpen(!expenseDropdownOpen);
+              } else if (item.name === 'Reports') {
+                setReportsDropdownOpen(!reportsDropdownOpen);
               }
             }}
             className={`group flex items-center w-full px-2 py-2 text-sm font-medium rounded-md transition-colors ${
@@ -161,6 +175,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   onClick={() => {
                     setSidebarOpen(false);
                     setExpenseDropdownOpen(false);
+                    setReportsDropdownOpen(false);
                   }}
                   className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
                     location.pathname === child.href

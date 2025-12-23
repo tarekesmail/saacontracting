@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,7 +6,9 @@ import { z } from 'zod';
 import { api } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import Pagination from '../components/Pagination';
+import AdvancedSearch from '../components/AdvancedSearch';
+import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
 const laborerSchema = z.object({
@@ -24,8 +26,11 @@ type LaborerForm = z.infer<typeof laborerSchema>;
 export default function LaborersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLaborer, setEditingLaborer] = useState<any>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchParams, setSearchParams] = useState<Record<string, any>>({});
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -34,9 +39,16 @@ export default function LaborersPage() {
   const canDelete = true;
 
   const { data: laborersData, isLoading } = useQuery(
-    ['laborers', currentPage, searchTerm],
+    ['laborers', currentPage, searchParams, pageSize, sortBy, sortOrder],
     async () => {
-      const response = await api.get(`/laborers?page=${currentPage}&search=${searchTerm}`);
+      const queryParams = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: pageSize.toString(),
+        sortBy,
+        sortOrder,
+        ...searchParams
+      });
+      const response = await api.get(`/laborers?${queryParams}`);
       return response.data;
     }
   );
@@ -124,6 +136,95 @@ export default function LaborersPage() {
     setIsModalOpen(true);
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
+
+  const handleSearch = useCallback((newSearchParams: Record<string, any>) => {
+    setSearchParams(newSearchParams);
+    setCurrentPage(1); // Reset to first page when searching
+  }, []);
+
+  // Define search filters
+  const searchFilters = [
+    {
+      field: 'jobId',
+      label: 'Job',
+      type: 'select' as const,
+      options: jobs?.map((job: any) => ({ value: job.id, label: job.name })) || []
+    },
+    {
+      field: 'phoneNumber',
+      label: 'Phone Number',
+      type: 'text' as const
+    },
+    {
+      field: 'idNumber',
+      label: 'ID Number',
+      type: 'text' as const
+    },
+    {
+      field: 'salaryRateMin',
+      label: 'Min Salary Rate',
+      type: 'number' as const
+    },
+    {
+      field: 'salaryRateMax',
+      label: 'Max Salary Rate',
+      type: 'number' as const
+    },
+    {
+      field: 'orgRateMin',
+      label: 'Min Org Rate',
+      type: 'number' as const
+    },
+    {
+      field: 'orgRateMax',
+      label: 'Max Org Rate',
+      type: 'number' as const
+    },
+    {
+      field: 'startDateFrom',
+      label: 'Start Date From',
+      type: 'date' as const
+    },
+    {
+      field: 'startDateTo',
+      label: 'Start Date To',
+      type: 'date' as const
+    }
+  ];
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const SortableHeader = ({ field, children }: { field: string; children: React.ReactNode }) => (
+    <th 
+      className="table-header-cell cursor-pointer hover:bg-gray-100 select-none"
+      onClick={() => handleSort(field)}
+    >
+      <div className="flex items-center space-x-1">
+        <span>{children}</span>
+        {sortBy === field && (
+          <span className="text-primary-600">
+            {sortOrder === 'asc' ? '↑' : '↓'}
+          </span>
+        )}
+      </div>
+    </th>
+  );
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -149,40 +250,91 @@ export default function LaborersPage() {
         )}
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Search laborers..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="input pl-10"
-        />
+      {/* Advanced Search */}
+      <AdvancedSearch
+        onSearch={handleSearch}
+        filters={searchFilters}
+        placeholder="Search laborers by name, ID, phone, or job..."
+        showAdvanced={true}
+      />
+
+      {/* Quick Search Shortcuts */}
+      <div className="flex flex-wrap gap-2">
+        <span className="text-sm text-gray-500 self-center">Quick filters:</span>
+        <button
+          onClick={() => handleSearch({ jobId: jobs?.find((j: any) => j.name === 'Flagman')?.id || '' })}
+          className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
+        >
+          Flagman
+        </button>
+        <button
+          onClick={() => handleSearch({ jobId: jobs?.find((j: any) => j.name === 'Labour')?.id || '' })}
+          className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-full hover:bg-green-200"
+        >
+          Labour
+        </button>
+        <button
+          onClick={() => handleSearch({ salaryRateMin: '10' })}
+          className="px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200"
+        >
+          Salary ≥ 10 SAR
+        </button>
+        <button
+          onClick={() => handleSearch({ startDateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] })}
+          className="px-3 py-1 text-xs bg-orange-100 text-orange-700 rounded-full hover:bg-orange-200"
+        >
+          New (Last 30 days)
+        </button>
+        <button
+          onClick={() => handleSearch({})}
+          className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200"
+        >
+          Clear All
+        </button>
       </div>
+
+      {/* Results Summary */}
+      {laborersData && (
+        <div className="flex justify-between items-center text-sm text-gray-600">
+          <div>
+            {Object.keys(searchParams).length > 0 ? (
+              <span>
+                Found <strong>{laborersData.pagination.total}</strong> laborers matching your search
+              </span>
+            ) : (
+              <span>
+                Total <strong>{laborersData.pagination.total}</strong> laborers
+              </span>
+            )}
+          </div>
+          <div>
+            Page {currentPage} of {laborersData.pagination.pages}
+          </div>
+        </div>
+      )}
 
       {/* Laborers Table */}
       <div className="card overflow-hidden">
         <table className="table">
           <thead className="table-header">
             <tr>
-              <th className="table-header-cell">Name</th>
-              <th className="table-header-cell">ID Number</th>
-              <th className="table-header-cell">Phone</th>
-              <th className="table-header-cell">
+              <SortableHeader field="name">Name</SortableHeader>
+              <SortableHeader field="idNumber">ID Number</SortableHeader>
+              <SortableHeader field="phoneNumber">Phone</SortableHeader>
+              <SortableHeader field="salaryRate">
                 <div className="flex flex-col">
                   <span>Salary Rate</span>
                   <span className="text-xs text-gray-400 font-normal">(Laborer Pay)</span>
                 </div>
-              </th>
-              <th className="table-header-cell">
+              </SortableHeader>
+              <SortableHeader field="orgRate">
                 <div className="flex flex-col">
                   <span>Org Rate</span>
                   <span className="text-xs text-gray-400 font-normal">(Client Charge)</span>
                 </div>
-              </th>
+              </SortableHeader>
               <th className="table-header-cell">Job</th>
-              <th className="table-header-cell">Start Date</th>
+              <SortableHeader field="startDate">Start Date</SortableHeader>
               {(canEdit || canDelete) && <th className="table-header-cell">Actions</th>}
             </tr>
           </thead>
@@ -253,22 +405,20 @@ export default function LaborersPage() {
         )}
       </div>
 
-      {/* Pagination */}
+      {/* Improved Pagination */}
       {laborersData?.pagination && laborersData.pagination.pages > 1 && (
-        <div className="flex justify-center space-x-2">
-          {Array.from({ length: laborersData.pagination.pages }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`px-3 py-1 rounded ${
-                page === currentPage
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              {page}
-            </button>
-          ))}
+        <div className="card">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={laborersData.pagination.pages}
+            totalItems={laborersData.pagination.total}
+            itemsPerPage={pageSize}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={[10, 25, 50, 100]}
+            showPageSizeSelector={true}
+            showPageInfo={true}
+          />
         </div>
       )}
 

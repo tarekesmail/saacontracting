@@ -19,19 +19,84 @@ const laborerSchema = z.object({
 // Get all laborers for current tenant
 router.get('/', async (req: AuthRequest, res, next) => {
   try {
-    const { page = 1, limit = 10, search = '' } = req.query;
+    const { 
+      page = 1, 
+      limit = 10, 
+      search = '',
+      jobId = '',
+      salaryRateMin = '',
+      salaryRateMax = '',
+      orgRateMin = '',
+      orgRateMax = '',
+      startDateFrom = '',
+      startDateTo = '',
+      phoneNumber = '',
+      idNumber = '',
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+    
     const skip = (Number(page) - 1) * Number(limit);
 
-    const where = {
+    // Build dynamic where clause
+    const where: any = {
       tenantId: req.user!.tenantId!,
       isActive: true,
-      ...(search && {
-        OR: [
-          { name: { contains: search as string, mode: 'insensitive' as const } },
-          { idNumber: { contains: search as string, mode: 'insensitive' as const } }
-        ]
-      })
     };
+
+    // General search across multiple fields
+    if (search) {
+      where.OR = [
+        { name: { contains: search as string, mode: 'insensitive' } },
+        { idNumber: { contains: search as string, mode: 'insensitive' } },
+        { phoneNumber: { contains: search as string, mode: 'insensitive' } },
+        { job: { name: { contains: search as string, mode: 'insensitive' } } }
+      ];
+    }
+
+    // Specific field filters
+    if (jobId) {
+      where.jobId = jobId as string;
+    }
+
+    if (phoneNumber) {
+      where.phoneNumber = { contains: phoneNumber as string, mode: 'insensitive' };
+    }
+
+    if (idNumber) {
+      where.idNumber = { contains: idNumber as string, mode: 'insensitive' };
+    }
+
+    // Salary rate range
+    if (salaryRateMin || salaryRateMax) {
+      where.salaryRate = {};
+      if (salaryRateMin) where.salaryRate.gte = Number(salaryRateMin);
+      if (salaryRateMax) where.salaryRate.lte = Number(salaryRateMax);
+    }
+
+    // Organization rate range
+    if (orgRateMin || orgRateMax) {
+      where.orgRate = {};
+      if (orgRateMin) where.orgRate.gte = Number(orgRateMin);
+      if (orgRateMax) where.orgRate.lte = Number(orgRateMax);
+    }
+
+    // Start date range
+    if (startDateFrom || startDateTo) {
+      where.startDate = {};
+      if (startDateFrom) where.startDate.gte = new Date(startDateFrom as string);
+      if (startDateTo) where.startDate.lte = new Date(startDateTo as string);
+    }
+
+    // Build orderBy clause
+    let orderBy: any = {};
+    const validSortFields = ['name', 'idNumber', 'phoneNumber', 'salaryRate', 'orgRate', 'startDate', 'createdAt'];
+    
+    if (validSortFields.includes(sortBy as string)) {
+      orderBy[sortBy as string] = sortOrder === 'asc' ? 'asc' : 'desc';
+    } else {
+      orderBy.createdAt = 'desc'; // Default sort
+    }
 
     const [laborers, total] = await Promise.all([
       prisma.laborer.findMany({
@@ -41,7 +106,7 @@ router.get('/', async (req: AuthRequest, res, next) => {
         },
         skip,
         take: Number(limit),
-        orderBy: { createdAt: 'desc' }
+        orderBy
       }),
       prisma.laborer.count({ where })
     ]);

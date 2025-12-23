@@ -16,6 +16,37 @@ const laborerSchema = z.object({
   jobId: z.string().min(1) // Made required
 });
 
+// Check if ID number is available
+router.get('/check-id/:idNumber', async (req: AuthRequest, res, next) => {
+  try {
+    const { idNumber } = req.params;
+    const { excludeId } = req.query; // Optional: exclude a specific laborer ID when updating
+
+    const where: any = {
+      idNumber,
+      isActive: true
+    };
+
+    if (excludeId) {
+      where.NOT = { id: excludeId as string };
+    }
+
+    const existingLaborer = await prisma.laborer.findFirst({ where });
+
+    res.json({
+      available: !existingLaborer,
+      exists: !!existingLaborer,
+      laborer: existingLaborer ? {
+        id: existingLaborer.id,
+        name: existingLaborer.name,
+        tenantId: existingLaborer.tenantId
+      } : null
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Get all laborers for current tenant
 router.get('/', async (req: AuthRequest, res, next) => {
   try {
@@ -130,6 +161,22 @@ router.post('/', async (req: AuthRequest, res, next) => {
   try {
     const data = laborerSchema.parse(req.body);
 
+    // Check if ID number already exists globally
+    const existingLaborer = await prisma.laborer.findFirst({
+      where: {
+        idNumber: data.idNumber,
+        isActive: true
+      }
+    });
+
+    if (existingLaborer) {
+      return res.status(400).json({ 
+        error: 'ID Number already exists',
+        field: 'idNumber',
+        message: `A laborer with ID number "${data.idNumber}" already exists in the system.`
+      });
+    }
+
     // Verify job belongs to tenant
     const job = await prisma.job.findFirst({
       where: {
@@ -154,6 +201,14 @@ router.post('/', async (req: AuthRequest, res, next) => {
 
     res.status(201).json(laborer);
   } catch (error) {
+    // Handle Prisma unique constraint violation
+    if (error instanceof Error && error.message.includes('Unique constraint')) {
+      return res.status(400).json({ 
+        error: 'ID Number already exists',
+        field: 'idNumber',
+        message: 'This ID number is already registered in the system.'
+      });
+    }
     next(error);
   }
 });
@@ -162,6 +217,25 @@ router.post('/', async (req: AuthRequest, res, next) => {
 router.put('/:id', async (req: AuthRequest, res, next) => {
   try {
     const data = laborerSchema.parse(req.body);
+
+    // Check if ID number already exists for a different laborer
+    const existingLaborer = await prisma.laborer.findFirst({
+      where: {
+        idNumber: data.idNumber,
+        isActive: true,
+        NOT: {
+          id: req.params.id // Exclude the current laborer being updated
+        }
+      }
+    });
+
+    if (existingLaborer) {
+      return res.status(400).json({ 
+        error: 'ID Number already exists',
+        field: 'idNumber',
+        message: `A laborer with ID number "${data.idNumber}" already exists in the system.`
+      });
+    }
 
     const laborer = await prisma.laborer.updateMany({
       where: {
@@ -187,6 +261,14 @@ router.put('/:id', async (req: AuthRequest, res, next) => {
 
     res.json(updatedLaborer);
   } catch (error) {
+    // Handle Prisma unique constraint violation
+    if (error instanceof Error && error.message.includes('Unique constraint')) {
+      return res.status(400).json({ 
+        error: 'ID Number already exists',
+        field: 'idNumber',
+        message: 'This ID number is already registered in the system.'
+      });
+    }
     next(error);
   }
 });

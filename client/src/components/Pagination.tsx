@@ -77,7 +77,11 @@ export default function Pagination({
       <div className="flex items-center gap-2">
         {/* First Page */}
         <button
-          onClick={() => onPageChange(1)}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            onPageChange(1);
+          }}
           disabled={currentPage === 1}
           className="inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           title="First page"
@@ -87,7 +91,11 @@ export default function Pagination({
 
         {/* Previous Page */}
         <button
-          onClick={() => onPageChange(currentPage - 1)}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            onPageChange(currentPage - 1);
+          }}
           disabled={currentPage === 1}
           className="inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           title="Previous page"
@@ -103,7 +111,11 @@ export default function Pagination({
                 <span className="px-3 py-2 text-sm text-gray-500">...</span>
               ) : (
                 <button
-                  onClick={() => onPageChange(page as number)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onPageChange(page as number);
+                  }}
                   className={`px-3 py-2 text-sm font-medium rounded-md ${
                     page === currentPage
                       ? 'bg-primary-600 text-white border border-primary-600'
@@ -119,7 +131,11 @@ export default function Pagination({
 
         {/* Next Page */}
         <button
-          onClick={() => onPageChange(currentPage + 1)}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            onPageChange(currentPage + 1);
+          }}
           disabled={currentPage === totalPages}
           className="inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           title="Next page"
@@ -129,7 +145,11 @@ export default function Pagination({
 
         {/* Last Page */}
         <button
-          onClick={() => onPageChange(totalPages)}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            onPageChange(totalPages);
+          }}
           disabled={currentPage === totalPages}
           className="inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           title="Last page"

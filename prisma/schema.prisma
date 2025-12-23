@@ -41,7 +41,7 @@ model Laborer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([tenantId, idNumber])
+  @@unique([idNumber]) // ID Number must be globally unique across all tenants
   @@map("laborers")
 }
 

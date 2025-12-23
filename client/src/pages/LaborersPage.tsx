@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -38,8 +38,18 @@ export default function LaborersPage() {
   const canEdit = true;
   const canDelete = true;
 
+  // Memoize the query key to prevent unnecessary re-renders
+  const queryKey = useMemo(() => [
+    'laborers',
+    currentPage,
+    pageSize,
+    sortBy,
+    sortOrder,
+    JSON.stringify(searchParams) // Stringify to ensure stable comparison
+  ], [currentPage, pageSize, sortBy, sortOrder, searchParams]);
+
   const { data: laborersData, isLoading } = useQuery(
-    ['laborers', currentPage, searchParams, pageSize, sortBy, sortOrder],
+    queryKey,
     async () => {
       const queryParams = new URLSearchParams({
         page: currentPage.toString(),
@@ -50,6 +60,10 @@ export default function LaborersPage() {
       });
       const response = await api.get(`/laborers?${queryParams}`);
       return response.data;
+    },
+    {
+      keepPreviousData: true, // This prevents the loading state when changing pages
+      staleTime: 30000, // Keep data fresh for 30 seconds
     }
   );
 
@@ -76,6 +90,16 @@ export default function LaborersPage() {
         setIsModalOpen(false);
         reset();
       },
+      onError: (error: any) => {
+        const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to create laborer';
+        toast.error(errorMessage);
+        
+        // If it's a field-specific error, you could highlight the field
+        if (error.response?.data?.field === 'idNumber') {
+          // The error will be shown in the toast, but you could also set form errors here
+          console.log('ID Number validation error:', errorMessage);
+        }
+      }
     }
   );
 
@@ -89,6 +113,15 @@ export default function LaborersPage() {
         setEditingLaborer(null);
         reset();
       },
+      onError: (error: any) => {
+        const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to update laborer';
+        toast.error(errorMessage);
+        
+        // If it's a field-specific error, you could highlight the field
+        if (error.response?.data?.field === 'idNumber') {
+          console.log('ID Number validation error:', errorMessage);
+        }
+      }
     }
   );
 
@@ -137,6 +170,7 @@ export default function LaborersPage() {
   };
 
   const handlePageChange = (page: number) => {
+    console.log('Page change requested:', page, 'Current page:', currentPage);
     setCurrentPage(page);
   };
 
@@ -146,9 +180,15 @@ export default function LaborersPage() {
   };
 
   const handleSearch = useCallback((newSearchParams: Record<string, any>) => {
-    setSearchParams(newSearchParams);
-    setCurrentPage(1); // Reset to first page when searching
-  }, []);
+    // Only update if the search params actually changed
+    const currentParamsString = JSON.stringify(searchParams);
+    const newParamsString = JSON.stringify(newSearchParams);
+    
+    if (currentParamsString !== newParamsString) {
+      setSearchParams(newSearchParams);
+      setCurrentPage(1); // Reset to first page when searching
+    }
+  }, [searchParams]);
 
   // Define search filters
   const searchFilters = [
@@ -212,7 +252,10 @@ export default function LaborersPage() {
   const SortableHeader = ({ field, children }: { field: string; children: React.ReactNode }) => (
     <th 
       className="table-header-cell cursor-pointer hover:bg-gray-100 select-none"
-      onClick={() => handleSort(field)}
+      onClick={(e) => {
+        e.preventDefault();
+        handleSort(field);
+      }}
     >
       <div className="flex items-center space-x-1">
         <span>{children}</span>
@@ -262,30 +305,35 @@ export default function LaborersPage() {
       <div className="flex flex-wrap gap-2">
         <span className="text-sm text-gray-500 self-center">Quick filters:</span>
         <button
+          type="button"
           onClick={() => handleSearch({ jobId: jobs?.find((j: any) => j.name === 'Flagman')?.id || '' })}
           className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
         >
           Flagman
         </button>
         <button
+          type="button"
           onClick={() => handleSearch({ jobId: jobs?.find((j: any) => j.name === 'Labour')?.id || '' })}
           className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-full hover:bg-green-200"
         >
           Labour
         </button>
         <button
+          type="button"
           onClick={() => handleSearch({ salaryRateMin: '10' })}
           className="px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200"
         >
           Salary ≥ 10 SAR
         </button>
         <button
+          type="button"
           onClick={() => handleSearch({ startDateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] })}
           className="px-3 py-1 text-xs bg-orange-100 text-orange-700 rounded-full hover:bg-orange-200"
         >
           New (Last 30 days)
         </button>
         <button
+          type="button"
           onClick={() => handleSearch({})}
           className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200"
         >
@@ -442,6 +490,7 @@ export default function LaborersPage() {
                   <label className="label">ID Number</label>
                   <input {...register('idNumber')} className="input" />
                   {errors.idNumber && <p className="text-red-600 text-sm">{errors.idNumber.message}</p>}
+                  <p className="text-xs text-gray-500 mt-1">Must be unique across the entire system</p>
                 </div>
 
                 <div>

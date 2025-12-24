@@ -35,41 +35,30 @@ export default function PrintInvoicePage() {
     const style = document.createElement('style');
     style.textContent = `
       @media print {
-        /* Page settings */
         @page {
           margin: 0.5in;
           size: A4;
         }
         
-        /* Hide everything except invoice content */
-        body * {
-          visibility: hidden;
-        }
-        
-        .invoice-container,
-        .invoice-container * {
-          visibility: visible;
-        }
-        
-        /* Position invoice content */
-        .invoice-container {
-          position: absolute;
-          left: 0;
-          top: 0;
-          width: 100%;
-        }
-        
-        /* Hide print button */
         .print-button {
           display: none !important;
         }
         
-        /* Ensure proper styling */
         body {
           font-family: Arial, sans-serif !important;
           font-size: 11pt !important;
           line-height: 1.4 !important;
           color: black !important;
+          background: white !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        
+        .invoice-container {
+          width: 100% !important;
+          max-width: none !important;
+          margin: 0 !important;
+          padding: 20px !important;
           background: white !important;
         }
       }

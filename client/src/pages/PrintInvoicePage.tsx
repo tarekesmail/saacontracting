@@ -34,19 +34,55 @@ export default function PrintInvoicePage() {
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
+      @media print {
+        /* Page settings */
+        @page {
+          margin: 0.5in;
+          size: A4;
+        }
+        
+        /* Hide everything except invoice content */
+        body * {
+          visibility: hidden;
+        }
+        
+        .invoice-container,
+        .invoice-container * {
+          visibility: visible;
+        }
+        
+        /* Position invoice content */
+        .invoice-container {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+        }
+        
+        /* Hide print button */
+        .print-button {
+          display: none !important;
+        }
+        
+        /* Ensure proper styling */
+        body {
+          font-family: Arial, sans-serif !important;
+          font-size: 11pt !important;
+          line-height: 1.4 !important;
+          color: black !important;
+          background: white !important;
+        }
       }
       
+      /* Screen styles */
       body {
-        font-family: Arial, sans-serif !important;
-        font-size: 11pt !important;
-        line-height: 1.4 !important;
-        color: black !important;
-        background: white !important;
-        padding: 20px !important;
+        font-family: Arial, sans-serif;
+        font-size: 11pt;
+        line-height: 1.4;
+        color: black;
+        background: white;
+        padding: 20px;
+        margin: 0;
       }
       
       .invoice-container {
@@ -201,39 +237,22 @@ export default function PrintInvoicePage() {
         margin: 2px 0;
       }
       
-      @media print {
-        body {
-          padding: 0 !important;
-        }
-        
-        @page {
-          margin: 0.5in;
-          size: A4;
-        }
-        
-        .print-button {
-          display: none !important;
-        }
+      .print-button {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        z-index: 1000;
       }
       
-      @media screen {
-        .print-button {
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          background: #007bff;
-          color: white;
-          border: none;
-          padding: 10px 20px;
-          border-radius: 5px;
-          cursor: pointer;
-          font-size: 14px;
-          z-index: 1000;
-        }
-        
-        .print-button:hover {
-          background: #0056b3;
-        }
+      .print-button:hover {
+        background: #0056b3;
       }
     `;
     document.head.appendChild(style);

@@ -11,9 +11,12 @@ import { PlusIcon, TrashIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast';
 
 const invoiceItemSchema = z.object({
-  jobId: z.string().min(1, 'Job is required'),
-  hours: z.number().positive('Hours must be positive'),
-  description: z.string().optional()
+  jobId: z.string().optional(),
+  hours: z.number().optional(),
+  description: z.string().min(1, 'Description is required'),
+  quantity: z.number().positive('Quantity must be positive'),
+  unitPrice: z.number().positive('Unit price must be positive'),
+  vatRate: z.number().min(0).max(100).default(15)
 });
 
 const invoiceSchema = z.object({
@@ -31,6 +34,7 @@ type InvoiceForm = z.infer<typeof invoiceSchema>;
 export default function CreateInvoicePage() {
   const navigate = useNavigate();
   const [previewMode, setPreviewMode] = useState(false);
+  const [invoiceMode, setInvoiceMode] = useState<'job-based' | 'manual'>('job-based');
 
   // Fetch jobs for dropdown
   const { data: jobs } = useQuery('jobs', async () => {
@@ -53,7 +57,14 @@ export default function CreateInvoicePage() {
       customerCity: 'District,Riyadh, Kingdom of Saudi Arabia',
       issueDate: new Date().toISOString().split('T')[0],
       dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
-      items: [{ jobId: '', hours: 1, description: '' }]
+      items: [{ 
+        jobId: '', 
+        hours: 1, 
+        description: '',
+        quantity: 1,
+        unitPrice: 0,
+        vatRate: 15
+      }]
     }
   });
 
@@ -70,17 +81,26 @@ export default function CreateInvoicePage() {
       const transformedData = {
         ...data,
         items: data.items.map(item => {
-          const job = jobs?.find((j: any) => j.id === item.jobId);
-          const orgRate = parseFloat(job?.laborers?.[0]?.orgRate || '0');
-          const lineTotal = item.hours * orgRate;
-          const vatAmount = lineTotal * 0.15; // 15% VAT
-          
-          return {
-            description: item.description || `${job?.name} (${item.hours} hours)`,
-            quantity: item.hours,
-            unitPrice: orgRate,
-            vatRate: 15
-          };
+          if (invoiceMode === 'job-based') {
+            const job = jobs?.find((j: any) => j.id === item.jobId);
+            const orgRate = parseFloat(job?.laborers?.[0]?.orgRate || '0');
+            const lineTotal = (item.hours || 0) * orgRate;
+            
+            return {
+              description: item.description || `${job?.name} (${item.hours} hours)`,
+              quantity: item.hours || 0,
+              unitPrice: orgRate,
+              vatRate: 15
+            };
+          } else {
+            // Manual mode
+            return {
+              description: item.description,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              vatRate: item.vatRate
+            };
+          }
         })
       };
       return api.post('/invoices', transformedData);
@@ -101,7 +121,25 @@ export default function CreateInvoicePage() {
   };
 
   const addItem = () => {
-    append({ jobId: '', hours: 1, description: '' });
+    if (invoiceMode === 'job-based') {
+      append({ 
+        jobId: '', 
+        hours: 1, 
+        description: '',
+        quantity: 1,
+        unitPrice: 0,
+        vatRate: 15
+      });
+    } else {
+      append({ 
+        jobId: '', 
+        hours: 0, 
+        description: '',
+        quantity: 1,
+        unitPrice: 0,
+        vatRate: 15
+      });
+    }
   };
 
   const removeItem = (index: number) => {
@@ -116,14 +154,19 @@ export default function CreateInvoicePage() {
     let totalVat = 0;
 
     watchedItems?.forEach((item) => {
-      if (item.jobId && item.hours) {
+      let lineTotal = 0;
+      
+      if (invoiceMode === 'job-based' && item.jobId && item.hours) {
         const job = jobs?.find((j: any) => j.id === item.jobId);
         const orgRate = parseFloat(job?.laborers?.[0]?.orgRate || '0');
-        const lineTotal = item.hours * orgRate;
-        const vatAmount = lineTotal * 0.15; // 15% VAT
-        subtotal += lineTotal;
-        totalVat += vatAmount;
+        lineTotal = item.hours * orgRate;
+      } else if (invoiceMode === 'manual' && item.quantity && item.unitPrice) {
+        lineTotal = item.quantity * item.unitPrice;
       }
+      
+      const vatAmount = lineTotal * ((item.vatRate || 15) / 100);
+      subtotal += lineTotal;
+      totalVat += vatAmount;
     });
 
     return {
@@ -165,6 +208,32 @@ export default function CreateInvoicePage() {
 
       {!previewMode ? (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Invoice Mode Selector */}
+          <div className="card p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Invoice Type</h3>
+            <div className="flex space-x-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="job-based"
+                  checked={invoiceMode === 'job-based'}
+                  onChange={(e) => setInvoiceMode(e.target.value as 'job-based' | 'manual')}
+                  className="mr-2"
+                />
+                Job-Based Invoice (from system jobs)
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="manual"
+                  checked={invoiceMode === 'manual'}
+                  onChange={(e) => setInvoiceMode(e.target.value as 'job-based' | 'manual')}
+                  className="mr-2"
+                />
+                Manual Invoice (custom items)
+              </label>
+            </div>
+          </div>
           {/* Customer Information */}
           <div className="card p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Customer Information</h3>
@@ -241,88 +310,198 @@ export default function CreateInvoicePage() {
 
             <div className="space-y-4">
               {fields.map((field, index) => {
-                const selectedJob = jobs?.find((j: any) => j.id === watchedItems?.[index]?.jobId);
-                const orgRate = parseFloat(selectedJob?.laborers?.[0]?.orgRate || '0');
-                const hours = watchedItems?.[index]?.hours || 0;
-                const lineTotal = hours * orgRate;
-                const vatAmount = lineTotal * 0.15;
-                const total = lineTotal + vatAmount;
+                let lineTotal = 0;
+                let vatAmount = 0;
+                let total = 0;
 
-                return (
-                  <div key={field.id} className="grid grid-cols-12 gap-4 items-end">
-                    <div className="col-span-4">
-                      <label className="label">Job Type</label>
-                      <select
-                        {...register(`items.${index}.jobId`)}
-                        className="input"
-                      >
-                        <option value="">Select a job</option>
-                        {jobs?.map((job: any) => (
-                          <option key={job.id} value={job.id}>
-                            {job.name}
-                          </option>
-                        ))}
-                      </select>
-                      {errors.items?.[index]?.jobId && (
-                        <p className="text-red-600 text-sm">
-                          {errors.items[index]?.jobId?.message}
-                        </p>
-                      )}
-                    </div>
+                if (invoiceMode === 'job-based') {
+                  const selectedJob = jobs?.find((j: any) => j.id === watchedItems?.[index]?.jobId);
+                  const orgRate = parseFloat(selectedJob?.laborers?.[0]?.orgRate || '0');
+                  const hours = watchedItems?.[index]?.hours || 0;
+                  lineTotal = hours * orgRate;
+                  vatAmount = lineTotal * 0.15;
+                  total = lineTotal + vatAmount;
 
-                    <div className="col-span-2">
-                      <label className="label">Hours</label>
-                      <input
-                        {...register(`items.${index}.hours`, { valueAsNumber: true })}
-                        type="number"
-                        step="0.5"
-                        min="0"
-                        className="input"
-                        placeholder="8"
-                      />
-                      {errors.items?.[index]?.hours && (
-                        <p className="text-red-600 text-sm">
-                          {errors.items[index]?.hours?.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="col-span-2">
-                      <label className="label">Rate (SAR/hr)</label>
-                      <div className="input bg-gray-50 text-gray-600">
-                        {orgRate.toFixed(2)}
-                      </div>
-                    </div>
-
-                    <div className="col-span-2">
-                      <label className="label">Description (Optional)</label>
-                      <input
-                        {...register(`items.${index}.description`)}
-                        className="input"
-                        placeholder="Additional details"
-                      />
-                    </div>
-
-                    <div className="col-span-1">
-                      <label className="label">Total</label>
-                      <div className="text-sm font-medium text-gray-900 py-2">
-                        {total.toFixed(2)} SAR
-                      </div>
-                    </div>
-
-                    <div className="col-span-1">
-                      {fields.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeItem(index)}
-                          className="text-red-600 hover:text-red-900 p-2"
+                  return (
+                    <div key={field.id} className="grid grid-cols-12 gap-4 items-end">
+                      <div className="col-span-4">
+                        <label className="label">Job Type</label>
+                        <select
+                          {...register(`items.${index}.jobId`)}
+                          className="input"
                         >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      )}
+                          <option value="">Select a job</option>
+                          {jobs?.map((job: any) => (
+                            <option key={job.id} value={job.id}>
+                              {job.name}
+                            </option>
+                          ))}
+                        </select>
+                        {errors.items?.[index]?.jobId && (
+                          <p className="text-red-600 text-sm">
+                            {errors.items[index]?.jobId?.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="label">Hours</label>
+                        <input
+                          {...register(`items.${index}.hours`, { valueAsNumber: true })}
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          className="input"
+                          placeholder="8"
+                        />
+                        {errors.items?.[index]?.hours && (
+                          <p className="text-red-600 text-sm">
+                            {errors.items[index]?.hours?.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="label">Rate (SAR/hr)</label>
+                        <div className="input bg-gray-50 text-gray-600">
+                          {orgRate.toFixed(2)}
+                        </div>
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="label">Description (Optional)</label>
+                        <input
+                          {...register(`items.${index}.description`)}
+                          className="input"
+                          placeholder="Additional details"
+                        />
+                      </div>
+
+                      <div className="col-span-1">
+                        <label className="label">Total</label>
+                        <div className="text-sm font-medium text-gray-900 py-2">
+                          {total.toFixed(2)} SAR
+                        </div>
+                      </div>
+
+                      <div className="col-span-1">
+                        {fields.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeItem(index)}
+                            className="text-red-600 hover:text-red-900 p-2"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
+                  );
+                } else {
+                  // Manual mode
+                  const quantity = watchedItems?.[index]?.quantity || 0;
+                  const unitPrice = watchedItems?.[index]?.unitPrice || 0;
+                  const vatRate = watchedItems?.[index]?.vatRate || 15;
+                  lineTotal = quantity * unitPrice;
+                  vatAmount = lineTotal * (vatRate / 100);
+                  total = lineTotal + vatAmount;
+
+                  return (
+                    <div key={field.id} className="grid grid-cols-12 gap-4 items-end">
+                      <div className="col-span-3">
+                        <label className="label">Description *</label>
+                        <input
+                          {...register(`items.${index}.description`)}
+                          className="input"
+                          placeholder="Item description"
+                        />
+                        {errors.items?.[index]?.description && (
+                          <p className="text-red-600 text-sm">
+                            {errors.items[index]?.description?.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="label">Quantity *</label>
+                        <input
+                          {...register(`items.${index}.quantity`, { valueAsNumber: true })}
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          className="input"
+                          placeholder="1"
+                        />
+                        {errors.items?.[index]?.quantity && (
+                          <p className="text-red-600 text-sm">
+                            {errors.items[index]?.quantity?.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="label">Unit Price (SAR) *</label>
+                        <input
+                          {...register(`items.${index}.unitPrice`, { valueAsNumber: true })}
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          className="input"
+                          placeholder="100.00"
+                        />
+                        {errors.items?.[index]?.unitPrice && (
+                          <p className="text-red-600 text-sm">
+                            {errors.items[index]?.unitPrice?.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="label">VAT Rate (%)</label>
+                        <input
+                          {...register(`items.${index}.vatRate`, { valueAsNumber: true })}
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          className="input"
+                          placeholder="15"
+                        />
+                        {errors.items?.[index]?.vatRate && (
+                          <p className="text-red-600 text-sm">
+                            {errors.items[index]?.vatRate?.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="label">Line Total</label>
+                        <div className="text-sm font-medium text-gray-900 py-2">
+                          {lineTotal.toFixed(2)} SAR
+                        </div>
+                      </div>
+
+                      <div className="col-span-1">
+                        <label className="label">Total</label>
+                        <div className="text-sm font-medium text-gray-900 py-2">
+                          {total.toFixed(2)} SAR
+                        </div>
+                      </div>
+
+                      <div className="col-span-1">
+                        {fields.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeItem(index)}
+                            className="text-red-600 hover:text-red-900 p-2"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
               })}
             </div>
 
@@ -421,21 +600,41 @@ export default function CreateInvoicePage() {
                 </thead>
                 <tbody>
                   {watchedItems?.map((item, index) => {
-                    const job = jobs?.find((j: any) => j.id === item.jobId);
-                    const orgRate = parseFloat(job?.laborers?.[0]?.orgRate || '0');
-                    const hours = item.hours || 0;
-                    const lineTotal = hours * orgRate;
-                    const vatAmount = lineTotal * 0.15;
-                    const total = lineTotal + vatAmount;
+                    let lineTotal = 0;
+                    let vatAmount = 0;
+                    let total = 0;
+                    let description = '';
+                    let quantity = 0;
+                    let unitPrice = 0;
+
+                    if (invoiceMode === 'job-based') {
+                      const job = jobs?.find((j: any) => j.id === item.jobId);
+                      const orgRate = parseFloat(job?.laborers?.[0]?.orgRate || '0');
+                      const hours = item.hours || 0;
+                      lineTotal = hours * orgRate;
+                      vatAmount = lineTotal * 0.15;
+                      total = lineTotal + vatAmount;
+                      description = item.description || `${job?.name} (${hours} hours)`;
+                      quantity = hours;
+                      unitPrice = orgRate;
+                    } else {
+                      quantity = item.quantity || 0;
+                      unitPrice = item.unitPrice || 0;
+                      const vatRate = item.vatRate || 15;
+                      lineTotal = quantity * unitPrice;
+                      vatAmount = lineTotal * (vatRate / 100);
+                      total = lineTotal + vatAmount;
+                      description = item.description || '';
+                    }
                     
                     return (
                       <tr key={index}>
                         <td className="border border-gray-300 p-2 text-center">{index + 1}</td>
                         <td className="border border-gray-300 p-2">
-                          {item.description || `${job?.name} (${hours} hours)`}
+                          {description}
                         </td>
-                        <td className="border border-gray-300 p-2 text-center">{hours}</td>
-                        <td className="border border-gray-300 p-2 text-right">{orgRate.toFixed(2)}</td>
+                        <td className="border border-gray-300 p-2 text-center">{quantity}</td>
+                        <td className="border border-gray-300 p-2 text-right">{unitPrice.toFixed(2)}</td>
                         <td className="border border-gray-300 p-2 text-right">{lineTotal.toFixed(2)}</td>
                         <td className="border border-gray-300 p-2 text-right">{vatAmount.toFixed(2)}</td>
                         <td className="border border-gray-300 p-2 text-right">{total.toFixed(2)}</td>

@@ -11,6 +11,8 @@ import toast from 'react-hot-toast';
 const monthlyInvoiceSchema = z.object({
   month: z.number().min(1).max(12),
   year: z.number().min(2020).max(2030),
+  issueDate: z.string().min(1, 'Issue date is required'),
+  dueDate: z.string().min(1, 'Due date is required'),
   customerName: z.string().min(1, 'Customer name is required').default('ILYAS Arab Engineering Construction Ltd'),
   customerVat: z.string().optional().default('311097151900003'),
   customerAddress: z.string().min(1, 'Customer address is required').default('No.100 Gate 1, Building No.7544 King Fahad Road, Al Nakhil'),
@@ -34,6 +36,8 @@ export default function GenerateMonthlyInvoicePage() {
     defaultValues: {
       month: currentMonth,
       year: currentYear,
+      issueDate: new Date().toISOString().split('T')[0],
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
       customerName: 'ILYAS Arab Engineering Construction Ltd',
       customerVat: '311097151900003',
       customerAddress: 'No.100 Gate 1, Building No.7544 King Fahad Road, Al Nakhil',
@@ -123,6 +127,22 @@ export default function GenerateMonthlyInvoicePage() {
               </select>
               {errors.year && (
                 <p className="text-red-600 text-sm">{errors.year.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="label">Issue Date *</label>
+              <input {...register('issueDate')} type="date" className="input" />
+              {errors.issueDate && (
+                <p className="text-red-600 text-sm">{errors.issueDate.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="label">Due Date *</label>
+              <input {...register('dueDate')} type="date" className="input" />
+              {errors.dueDate && (
+                <p className="text-red-600 text-sm">{errors.dueDate.message}</p>
               )}
             </div>
           </div>

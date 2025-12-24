@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../lib/api';
+import { numberToWords } from '../utils/numberToWords';
 
 export default function PrintInvoicePage() {
   const { id } = useParams<{ id: string }>();
@@ -97,6 +98,10 @@ export default function PrintInvoicePage() {
         margin-bottom: 30px;
       }
       
+      .bill-to {
+        flex: 1;
+      }
+      
       .bill-to h3 {
         font-weight: bold;
         margin-bottom: 10px;
@@ -108,6 +113,10 @@ export default function PrintInvoicePage() {
       
       .invoice-meta {
         text-align: right;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
       }
       
       .invoice-meta p {
@@ -116,11 +125,12 @@ export default function PrintInvoicePage() {
       
       .qr-code {
         margin-top: 15px;
+        text-align: right;
       }
       
       .qr-code img {
-        width: 80px;
-        height: 80px;
+        width: 150px;
+        height: 150px;
         border: 1px solid #ccc;
       }
       
@@ -291,11 +301,13 @@ export default function PrintInvoicePage() {
             {invoice.customerVat && <p><strong>VAT:</strong> {invoice.customerVat}</p>}
           </div>
           <div className="invoice-meta">
-            <p><strong>Invoice #:</strong> {invoice.invoiceNumber}</p>
-            <p><strong>Invoice Date:</strong> {new Date(invoice.issueDate).toLocaleDateString()}</p>
-            <p><strong>Due Date:</strong> {new Date(invoice.dueDate).toLocaleDateString()}</p>
+            <div>
+              <p><strong>Invoice #:</strong> {invoice.invoiceNumber}</p>
+              <p><strong>Invoice Date:</strong> {new Date(invoice.issueDate).toLocaleDateString()}</p>
+              <p><strong>Due Date:</strong> {new Date(invoice.dueDate).toLocaleDateString()}</p>
+            </div>
             
-            {/* QR Code */}
+            {/* QR Code - moved to right side */}
             {invoice.qrCode && (
               <div className="qr-code">
                 <img src={invoice.qrCode} alt="ZATCA QR Code" />
@@ -308,6 +320,7 @@ export default function PrintInvoicePage() {
         <table className="items-table">
           <thead>
             <tr>
+              <th>#</th>
               <th>Description</th>
               <th>Qty</th>
               <th>Rate</th>
@@ -319,6 +332,7 @@ export default function PrintInvoicePage() {
           <tbody>
             {invoice.items.map((item: any, index: number) => (
               <tr key={index}>
+                <td className="text-center">{index + 1}</td>
                 <td>{item.description}</td>
                 <td className="text-center">{parseFloat(item.quantity).toFixed(2)}</td>
                 <td className="text-right">{parseFloat(item.unitPrice).toFixed(2)}</td>
@@ -328,7 +342,7 @@ export default function PrintInvoicePage() {
               </tr>
             ))}
             <tr className="total-row">
-              <td colSpan={3} className="text-right">Total</td>
+              <td colSpan={4} className="text-right">Total</td>
               <td className="text-right">{parseFloat(invoice.subtotal).toFixed(2)}</td>
               <td className="text-right">{parseFloat(invoice.vatAmount).toFixed(2)}</td>
               <td className="text-right">{parseFloat(invoice.totalAmount).toFixed(2)}</td>
@@ -348,7 +362,7 @@ export default function PrintInvoicePage() {
 
         {/* Amount in Words */}
         <div style={{ margin: '20px 0', fontSize: '10pt' }}>
-          <p><strong>Amount in Words:</strong> {/* Add number-to-words converter if needed */}</p>
+          <p><strong>Amount in Words:</strong> {numberToWords(parseFloat(invoice.totalAmount))}</p>
         </div>
 
         {/* Bank Details */}

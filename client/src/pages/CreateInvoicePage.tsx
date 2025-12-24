@@ -6,6 +6,7 @@ import { useMutation, useQuery } from 'react-query';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { numberToWords } from '../utils/numberToWords';
 import { PlusIcon, TrashIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
@@ -409,6 +410,7 @@ export default function CreateInvoicePage() {
               <table className="w-full border-collapse border border-gray-300 mb-6">
                 <thead>
                   <tr className="bg-gray-100">
+                    <th className="border border-gray-300 p-2 text-center">#</th>
                     <th className="border border-gray-300 p-2 text-left">Description</th>
                     <th className="border border-gray-300 p-2 text-center">Qty</th>
                     <th className="border border-gray-300 p-2 text-right">Rate</th>
@@ -428,6 +430,7 @@ export default function CreateInvoicePage() {
                     
                     return (
                       <tr key={index}>
+                        <td className="border border-gray-300 p-2 text-center">{index + 1}</td>
                         <td className="border border-gray-300 p-2">
                           {item.description || `${job?.name} (${hours} hours)`}
                         </td>
@@ -444,7 +447,7 @@ export default function CreateInvoicePage() {
 
               {/* Totals */}
               <div className="flex justify-end">
-                <div className="w-64">
+                <div className="w-80">
                   <div className="flex justify-between py-1">
                     <span>Subtotal:</span>
                     <span>{totals.subtotal.toFixed(2)} SAR</span>
@@ -456,6 +459,10 @@ export default function CreateInvoicePage() {
                   <div className="flex justify-between py-2 border-t font-bold">
                     <span>Total:</span>
                     <span>{totals.total.toFixed(2)} SAR</span>
+                  </div>
+                  <div className="text-xs text-gray-600 mt-2">
+                    <strong>Amount in Words:</strong><br />
+                    {numberToWords(totals.total)}
                   </div>
                 </div>
               </div>

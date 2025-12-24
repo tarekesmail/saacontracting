@@ -73,7 +73,7 @@ async function generateMonthlyInvoiceNumber(tenantId: string, month: number, yea
 // Generate monthly invoice from timesheets
 router.post('/generate-monthly', async (req: AuthRequest, res, next) => {
   try {
-    const { month, year, customerName, customerVat, customerAddress, customerCity } = req.body;
+    const { month, year, issueDate, dueDate, customerName, customerVat, customerAddress, customerCity } = req.body;
     const tenantId = req.user!.tenantId!;
 
     // Validate month and year
@@ -204,8 +204,8 @@ router.post('/generate-monthly', async (req: AuthRequest, res, next) => {
         invoiceNumber,
         invoiceMonth: month,
         invoiceYear: year,
-        issueDate: new Date(),
-        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        issueDate: new Date(issueDate),
+        dueDate: new Date(dueDate),
         customerName: customerName || 'ILYAS Arab Engineering Construction Ltd',
         customerVat: customerVat || '311097151900003',
         customerAddress: customerAddress || 'No.100 Gate 1, Building No.7544 King Fahad Road, Al Nakhil',

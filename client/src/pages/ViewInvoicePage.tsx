@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { numberToWords } from '../utils/numberToWords';
 import { 
   ArrowLeftIcon,
   DocumentArrowDownIcon,
@@ -232,13 +233,13 @@ export default function ViewInvoicePage() {
                   <p><strong>Due Date:</strong> {new Date(invoice.dueDate).toLocaleDateString()}</p>
                 </div>
                 
-                {/* QR Code */}
+                {/* QR Code - moved to right */}
                 {invoice.qrCode && (
                   <div className="mt-4">
                     <img 
                       src={invoice.qrCode} 
                       alt="ZATCA QR Code" 
-                      className="w-24 h-24 mx-auto border"
+                      className="w-36 h-36 mx-auto border"
                     />
                   </div>
                 )}
@@ -250,6 +251,7 @@ export default function ViewInvoicePage() {
               <table className="w-full border-collapse border border-gray-300">
                 <thead>
                   <tr className="bg-gray-100">
+                    <th className="border border-gray-300 p-3 text-center">#</th>
                     <th className="border border-gray-300 p-3 text-left">Description</th>
                     <th className="border border-gray-300 p-3 text-center">Qty</th>
                     <th className="border border-gray-300 p-3 text-right">Rate</th>
@@ -261,6 +263,7 @@ export default function ViewInvoicePage() {
                 <tbody>
                   {invoice.items.map((item: any, index: number) => (
                     <tr key={index}>
+                      <td className="border border-gray-300 p-3 text-center">{index + 1}</td>
                       <td className="border border-gray-300 p-3">{item.description}</td>
                       <td className="border border-gray-300 p-3 text-center">{parseFloat(item.quantity).toFixed(2)}</td>
                       <td className="border border-gray-300 p-3 text-right">{parseFloat(item.unitPrice).toFixed(2)}</td>
@@ -270,7 +273,7 @@ export default function ViewInvoicePage() {
                     </tr>
                   ))}
                   <tr className="bg-gray-50 font-bold">
-                    <td colSpan={3} className="border border-gray-300 p-3 text-right">Total</td>
+                    <td colSpan={4} className="border border-gray-300 p-3 text-right">Total</td>
                     <td className="border border-gray-300 p-3 text-right">{parseFloat(invoice.subtotal).toFixed(2)}</td>
                     <td className="border border-gray-300 p-3 text-right">{parseFloat(invoice.vatAmount).toFixed(2)}</td>
                     <td className="border border-gray-300 p-3 text-right">{parseFloat(invoice.totalAmount).toFixed(2)}</td>
@@ -291,7 +294,7 @@ export default function ViewInvoicePage() {
 
             {/* Amount in Words */}
             <div className="text-sm">
-              <p><strong>Amount in Words:</strong> {/* You can add a number-to-words converter here */}</p>
+              <p><strong>Amount in Words:</strong> {numberToWords(parseFloat(invoice.totalAmount))}</p>
             </div>
 
             {/* Bank Details */}

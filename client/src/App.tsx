@@ -16,6 +16,7 @@ import InvoicesPage from './pages/InvoicesPage';
 import CreateInvoicePage from './pages/CreateInvoicePage';
 import GenerateMonthlyInvoicePage from './pages/GenerateMonthlyInvoicePage';
 import ViewInvoicePage from './pages/ViewInvoicePage';
+import PrintInvoicePage from './pages/PrintInvoicePage';
 import TenantsPage from './pages/TenantsPage';
 import PublicLaborerPage from './pages/PublicLaborerPage';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -35,6 +36,7 @@ function App() {
     <Routes>
       {/* Public routes */}
       <Route path="/laborer" element={<PublicLaborerPage />} />
+      <Route path="/print/invoice/:id" element={<PrintInvoicePage />} />
       
       {/* Authentication routes */}
       {!user ? (

@@ -10,6 +10,7 @@ import {
   PlusIcon, 
   EyeIcon, 
   DocumentArrowDownIcon,
+  PrinterIcon,
   CheckCircleIcon,
   ClockIcon,
   ExclamationTriangleIcon,
@@ -103,6 +104,12 @@ export default function InvoicesPage() {
     } catch (error) {
       toast.error('Failed to download PDF');
     }
+  };
+
+  const printInvoice = (invoiceId: string) => {
+    // Open print page in new window
+    const printUrl = `/print/invoice/${invoiceId}`;
+    window.open(printUrl, '_blank', 'width=800,height=600');
   };
 
   const getStatusIcon = (status: string) => {
@@ -269,6 +276,13 @@ export default function InvoicesPage() {
                       title="View Invoice"
                     >
                       <EyeIcon className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => printInvoice(invoice.id)}
+                      className="text-purple-600 hover:text-purple-900"
+                      title="Print Invoice"
+                    >
+                      <PrinterIcon className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => downloadPDF(invoice.id, invoice.invoiceNumber)}

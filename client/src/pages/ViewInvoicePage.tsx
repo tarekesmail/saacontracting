@@ -77,7 +77,9 @@ export default function ViewInvoicePage() {
   };
 
   const printInvoice = () => {
-    window.print();
+    // Open print page in new window
+    const printUrl = `/print/invoice/${id}`;
+    window.open(printUrl, '_blank', 'width=800,height=600');
   };
 
   const getStatusIcon = (status: string) => {

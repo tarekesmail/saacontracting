@@ -1,82 +1,159 @@
 /* Print styles for clean invoice printing */
 @media print {
-  /* Hide all non-essential elements */
+  /* Reset everything */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  
+  /* Hide everything by default */
   body * {
-    visibility: hidden;
+    visibility: hidden !important;
+  }
+  
+  /* Remove all margins and padding from body and html */
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: white !important;
   }
   
   /* Show only the invoice content */
   .invoice-print-area,
   .invoice-print-area * {
-    visibility: visible;
+    visibility: visible !important;
   }
   
-  /* Position the invoice content */
+  /* Position the invoice content to fill the page */
   .invoice-print-area {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 20px !important;
+    background: white !important;
+    z-index: 9999 !important;
   }
   
-  /* Hide navigation, sidebar, and other UI elements */
+  /* Aggressively hide all UI elements */
   nav,
-  .sidebar,
+  header,
   .header,
+  .sidebar,
   .footer,
   .btn,
   .button,
-  .no-print {
+  .no-print,
+  .print-button,
+  [class*="btn"],
+  [class*="nav"],
+  [class*="header"],
+  [class*="sidebar"],
+  [class*="menu"],
+  [class*="toolbar"] {
     display: none !important;
+    visibility: hidden !important;
   }
   
-  /* Remove margins and padding from page */
+  /* Page settings */
   @page {
-    margin: 0.5in;
-    size: A4;
+    margin: 0.5in !important;
+    size: A4 !important;
   }
   
-  /* Ensure proper page breaks */
+  /* Invoice content styling */
   .invoice-content {
-    page-break-inside: avoid;
+    page-break-inside: avoid !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   
-  /* Style adjustments for print */
+  /* Typography for print */
   .invoice-print-area {
-    font-size: 12pt;
-    line-height: 1.4;
-    color: black;
-    background: white;
+    font-family: Arial, sans-serif !important;
+    font-size: 11pt !important;
+    line-height: 1.3 !important;
+    color: black !important;
+    background: white !important;
+  }
+  
+  .invoice-print-area h1 {
+    font-size: 16pt !important;
+    margin: 0 0 10px 0 !important;
+  }
+  
+  .invoice-print-area h2 {
+    font-size: 14pt !important;
+    margin: 0 0 8px 0 !important;
+  }
+  
+  .invoice-print-area h3 {
+    font-size: 12pt !important;
+    margin: 0 0 6px 0 !important;
+  }
+  
+  .invoice-print-area p {
+    margin: 2px 0 !important;
   }
   
   /* Table styles for print */
   .invoice-print-area table {
-    border-collapse: collapse;
-    width: 100%;
+    border-collapse: collapse !important;
+    width: 100% !important;
+    margin: 10px 0 !important;
   }
   
   .invoice-print-area th,
   .invoice-print-area td {
-    border: 1px solid #000;
-    padding: 8px;
-    text-align: left;
+    border: 1px solid #000 !important;
+    padding: 6px !important;
+    text-align: left !important;
+    font-size: 10pt !important;
   }
   
   .invoice-print-area th {
-    background-color: #f5f5f5;
-    font-weight: bold;
+    background-color: #f0f0f0 !important;
+    font-weight: bold !important;
   }
   
-  /* Remove shadows and rounded corners */
+  /* Remove all styling that interferes with print */
   .invoice-print-area * {
     box-shadow: none !important;
     border-radius: 0 !important;
+    text-shadow: none !important;
+    background-image: none !important;
   }
   
-  /* Ensure QR code is visible */
-  .qr-code {
-    max-width: 100px;
-    height: auto;
+  /* QR code styling */
+  .invoice-print-area .qr-code,
+  .invoice-print-area img {
+    max-width: 80px !important;
+    height: auto !important;
+    display: block !important;
+  }
+  
+  /* Grid and flex adjustments */
+  .invoice-print-area .grid {
+    display: block !important;
+  }
+  
+  .invoice-print-area .flex {
+    display: block !important;
+  }
+  
+  /* Spacing adjustments */
+  .invoice-print-area .space-y-8 > * + * {
+    margin-top: 20px !important;
+  }
+  
+  .invoice-print-area .space-y-2 > * + * {
+    margin-top: 5px !important;
   }
 }
 

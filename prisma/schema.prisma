@@ -18,6 +18,7 @@ model Tenant {
   timesheets       Timesheet[]
   expenseCategories ExpenseCategory[]
   expenses         Expense[]
+  invoices         Invoice[]
 
   @@map("tenants")
 }
@@ -121,4 +122,68 @@ model Expense {
   updatedAt   DateTime @updatedAt
   
   @@map("expenses")
+}
+
+model Invoice {
+  id              String   @id @default(cuid())
+  invoiceNumber   String   @unique // Sequential invoice number
+  issueDate       DateTime @db.Date
+  dueDate         DateTime @db.Date
+  
+  // Customer Information
+  customerName    String
+  customerVat     String?  // Customer VAT number
+  customerAddress String
+  customerCity    String
+  
+  // Invoice Totals
+  subtotal        Decimal  @db.Decimal(10, 2) // Amount before VAT
+  vatAmount       Decimal  @db.Decimal(10, 2) // VAT amount (15%)
+  totalAmount     Decimal  @db.Decimal(10, 2) // Total including VAT
+  
+  // Payment Information
+  status          InvoiceStatus @default(DRAFT)
+  paidDate        DateTime?
+  paymentMethod   String?
+  
+  // ZATCA Compliance
+  qrCode          String?  // Base64 encoded QR code
+  zatcaHash       String?  // ZATCA cryptographic stamp
+  
+  // Relations
+  tenantId        String
+  tenant          Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  items           InvoiceItem[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id              String  @id @default(cuid())
+  description     String
+  quantity        Decimal @db.Decimal(10, 2)
+  unitPrice       Decimal @db.Decimal(10, 2)
+  vatRate         Decimal @db.Decimal(5, 2) @default(15.00) // VAT percentage
+  lineTotal       Decimal @db.Decimal(10, 2) // Quantity * Unit Price
+  vatAmount       Decimal @db.Decimal(10, 2) // VAT for this line
+  totalAmount     Decimal @db.Decimal(10, 2) // Line total + VAT
+  
+  invoiceId       String
+  invoice         Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("invoice_items")
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
 }

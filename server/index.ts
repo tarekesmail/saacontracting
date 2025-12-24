@@ -11,6 +11,7 @@ import { reportRoutes } from './routes/reports';
 import { publicRoutes } from './routes/public';
 import { expenseCategoryRoutes } from './routes/expense-categories';
 import { expenseRoutes } from './routes/expenses';
+import { invoiceRoutes } from './routes/invoices';
 import { errorHandler } from './middleware/errorHandler';
 import { authenticateToken, requireTenant } from './middleware/auth';
 
@@ -53,6 +54,7 @@ app.use('/api/timesheets', authenticateToken, requireTenant, timesheetRoutes);
 app.use('/api/reports', authenticateToken, requireTenant, reportRoutes);
 app.use('/api/expense-categories', authenticateToken, requireTenant, expenseCategoryRoutes);
 app.use('/api/expenses', authenticateToken, requireTenant, expenseRoutes);
+app.use('/api/invoices', authenticateToken, requireTenant, invoiceRoutes);
 
 // Favicon route
 app.get('/favicon.ico', (req, res) => {

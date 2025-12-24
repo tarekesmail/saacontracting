@@ -20,6 +20,7 @@ import {
   CurrencyDollarIcon,
   ChevronRightIcon,
   ChartBarSquareIcon,
+  DocumentTextIcon,
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -27,6 +28,7 @@ const navigation = [
   { name: 'Laborers', href: '/laborers', icon: UsersIcon },
   { name: 'Jobs', href: '/jobs', icon: BriefcaseIcon },
   { name: 'Timesheets', href: '/timesheets', icon: ClockIcon },
+  { name: 'Invoices', href: '/invoices', icon: DocumentTextIcon },
   { 
     name: 'Expenses', 
     icon: CurrencyDollarIcon,

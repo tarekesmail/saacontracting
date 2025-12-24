@@ -255,6 +255,8 @@ export default function PrintInvoicePage() {
     // Simple approach - just use window.print() on the current page
     window.print();
   };
+
+  if (loading) {
     return (
       <div style={{ 
         display: 'flex', 

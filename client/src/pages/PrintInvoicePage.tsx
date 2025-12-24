@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { numberToWords } from '../utils/numberToWords';
+import '../styles/print.css';
 
 export default function PrintInvoicePage() {
   const { id } = useParams<{ id: string }>();
@@ -30,40 +31,10 @@ export default function PrintInvoicePage() {
     }
   }, [id]);
 
-  // Add print styles to document head
+  // Add simple print styles to document head
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
-      @media print {
-        @page {
-          margin: 0.5in;
-          size: A4;
-        }
-        
-        .print-button {
-          display: none !important;
-        }
-        
-        body {
-          font-family: Arial, sans-serif !important;
-          font-size: 11pt !important;
-          line-height: 1.4 !important;
-          color: black !important;
-          background: white !important;
-          margin: 0 !important;
-          padding: 0 !important;
-        }
-        
-        .invoice-container {
-          width: 100% !important;
-          max-width: none !important;
-          margin: 0 !important;
-          padding: 20px !important;
-          background: white !important;
-        }
-      }
-      
-      /* Screen styles */
       body {
         font-family: Arial, sans-serif;
         font-size: 11pt;
@@ -290,14 +261,15 @@ export default function PrintInvoicePage() {
         Print Invoice
       </button>
       
-      <div className="invoice-container">
+      <div className="invoice-print-area invoice-container">
         {/* Header */}
         <div className="header">
           <div className="company-info">
-            <h1>SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY</h1>
-            <div className="arabic">شركة صالح عبدالله المالكي للمقاولات العامة</div>
-            <p><strong>VAT:</strong> 312886534600003</p>
-            <p><strong>Email:</strong> tawaffallah@gmail.com</p>
+            <h1>ILYAS Arab Engineering Construction Ltd</h1>
+            <div className="arabic">شركة إلياس العربية للهندسة والإنشاءات المحدودة</div>
+            <p><strong>VAT:</strong> 311097151900003</p>
+            <p><strong>Address:</strong> No.100 Gate 1, Building No.7544 King Fahad Road, Al Nakhil</p>
+            <p><strong>City:</strong> District,Riyadh, Kingdom of Saudi Arabia</p>
           </div>
           <div className="invoice-title">
             <h2>Tax Invoice</h2>
@@ -385,7 +357,7 @@ export default function PrintInvoicePage() {
           <p>Account Number: 379000100006865704167</p>
           <p>IBAN Number: SA6600003790001000068657041</p>
           <p>Al rajhi Bank مصرف الراجحي للاستثمار</p>
-          <p>SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY</p>
+          <p>ILYAS Arab Engineering Construction Ltd</p>
         </div>
       </div>
     </>

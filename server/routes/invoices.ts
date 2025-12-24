@@ -48,19 +48,200 @@ async function generateZATCAQRCode(invoice: any, tenant: any): Promise<string> {
   return qrCodeDataURL;
 }
 
-// Generate sequential invoice number
-async function generateInvoiceNumber(tenantId: string): Promise<string> {
+// Generate sequential invoice number for the month
+async function generateMonthlyInvoiceNumber(tenantId: string, month: number, year: number): Promise<string> {
   const lastInvoice = await prisma.invoice.findFirst({
-    where: { tenantId },
-    orderBy: { createdAt: 'desc' }
+    where: { 
+      tenantId,
+      invoiceMonth: month,
+      invoiceYear: year
+    },
+    orderBy: { invoiceNumber: 'desc' }
   });
 
-  const nextNumber = lastInvoice 
-    ? parseInt(lastInvoice.invoiceNumber) + 1 
-    : 1;
+  let nextNumber = 1;
+  if (lastInvoice && lastInvoice.invoiceNumber) {
+    const lastNumber = parseInt(lastInvoice.invoiceNumber);
+    if (!isNaN(lastNumber)) {
+      nextNumber = lastNumber + 1;
+    }
+  }
 
-  return nextNumber.toString().padStart(6, '0');
+  return nextNumber.toString();
 }
+
+// Generate monthly invoice from timesheets
+router.post('/generate-monthly', async (req: AuthRequest, res, next) => {
+  try {
+    const { month, year, customerName, customerVat, customerAddress, customerCity } = req.body;
+    const tenantId = req.user!.tenantId!;
+
+    // Validate month and year
+    if (!month || !year || month < 1 || month > 12) {
+      return res.status(400).json({ error: 'Valid month (1-12) and year are required' });
+    }
+
+    // Check if invoice already exists for this month
+    const existingInvoice = await prisma.invoice.findFirst({
+      where: {
+        tenantId,
+        invoiceMonth: month,
+        invoiceYear: year,
+        customerName
+      }
+    });
+
+    if (existingInvoice) {
+      return res.status(400).json({ 
+        error: `Invoice already exists for ${customerName} in ${month}/${year}`,
+        invoiceId: existingInvoice.id
+      });
+    }
+
+    // Get tenant info
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId }
+    });
+
+    if (!tenant) {
+      return res.status(404).json({ error: 'Tenant not found' });
+    }
+
+    // Get timesheets for the month
+    const startDate = new Date(year, month - 1, 1); // First day of month
+    const endDate = new Date(year, month, 0); // Last day of month
+
+    const timesheets = await prisma.timesheet.findMany({
+      where: {
+        tenantId,
+        date: {
+          gte: startDate,
+          lte: endDate
+        }
+      },
+      include: {
+        laborer: {
+          include: {
+            job: true
+          }
+        }
+      }
+    });
+
+    if (timesheets.length === 0) {
+      return res.status(400).json({ error: `No timesheets found for ${month}/${year}` });
+    }
+
+    // Group timesheets by job and calculate totals
+    const jobSummary: { [jobId: string]: { 
+      jobName: string, 
+      totalHours: number, 
+      totalOvertimeHours: number,
+      orgRate: number,
+      laborers: string[]
+    }} = {};
+
+    timesheets.forEach(timesheet => {
+      const jobId = timesheet.laborer.jobId;
+      const jobName = timesheet.laborer.job?.name || 'Unknown Job';
+      const orgRate = parseFloat(timesheet.laborer.orgRate.toString());
+      const regularHours = parseFloat(timesheet.hoursWorked.toString());
+      const overtimeHours = parseFloat(timesheet.overtime.toString());
+
+      if (!jobSummary[jobId]) {
+        jobSummary[jobId] = {
+          jobName,
+          totalHours: 0,
+          totalOvertimeHours: 0,
+          orgRate,
+          laborers: []
+        };
+      }
+
+      jobSummary[jobId].totalHours += regularHours;
+      jobSummary[jobId].totalOvertimeHours += overtimeHours;
+      
+      if (!jobSummary[jobId].laborers.includes(timesheet.laborer.name)) {
+        jobSummary[jobId].laborers.push(timesheet.laborer.name);
+      }
+    });
+
+    // Generate invoice number
+    const invoiceNumber = await generateMonthlyInvoiceNumber(tenantId, month, year);
+
+    // Calculate totals and create invoice items
+    let subtotal = 0;
+    let totalVat = 0;
+
+    const invoiceItems = Object.entries(jobSummary).map(([jobId, summary]) => {
+      const regularAmount = summary.totalHours * summary.orgRate;
+      const overtimeAmount = summary.totalOvertimeHours * summary.orgRate * 1.5; // 1.5x for overtime
+      const lineTotal = regularAmount + overtimeAmount;
+      const vatAmount = lineTotal * 0.15; // 15% VAT
+      const totalAmount = lineTotal + vatAmount;
+
+      subtotal += lineTotal;
+      totalVat += vatAmount;
+
+      const description = `${summary.jobName} - ${summary.totalHours}h regular${summary.totalOvertimeHours > 0 ? ` + ${summary.totalOvertimeHours}h overtime` : ''} (${summary.laborers.length} laborers)`;
+
+      return {
+        description,
+        quantity: summary.totalHours + summary.totalOvertimeHours,
+        unitPrice: summary.orgRate,
+        vatRate: 15,
+        lineTotal,
+        vatAmount,
+        totalAmount
+      };
+    });
+
+    const totalAmount = subtotal + totalVat;
+
+    // Create invoice
+    const invoice = await prisma.invoice.create({
+      data: {
+        invoiceNumber,
+        invoiceMonth: month,
+        invoiceYear: year,
+        issueDate: new Date(),
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        customerName: customerName || 'ILYAS Arab Engineering Construction Ltd',
+        customerVat: customerVat || '311097151900003',
+        customerAddress: customerAddress || 'No.100 Gate 1, Building No.7544 King Fahad Road, Al Nakhil',
+        customerCity: customerCity || 'District,Riyadh, Kingdom of Saudi Arabia',
+        subtotal,
+        vatAmount: totalVat,
+        totalAmount,
+        tenantId,
+        items: {
+          create: invoiceItems
+        }
+      },
+      include: {
+        items: true,
+        tenant: true
+      }
+    });
+
+    // Generate QR code
+    const qrCode = await generateZATCAQRCode(invoice, tenant);
+
+    // Update invoice with QR code
+    const updatedInvoice = await prisma.invoice.update({
+      where: { id: invoice.id },
+      data: { qrCode },
+      include: {
+        items: true,
+        tenant: true
+      }
+    });
+
+    res.status(201).json(updatedInvoice);
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Get all invoices for current tenant
 router.get('/', async (req: AuthRequest, res, next) => {
@@ -149,8 +330,11 @@ router.post('/', async (req: AuthRequest, res, next) => {
       return res.status(404).json({ error: 'Tenant not found' });
     }
 
-    // Generate invoice number
-    const invoiceNumber = await generateInvoiceNumber(tenantId);
+    // Generate invoice number for current month
+    const currentDate = new Date(data.issueDate);
+    const month = currentDate.getMonth() + 1;
+    const year = currentDate.getFullYear();
+    const invoiceNumber = await generateMonthlyInvoiceNumber(tenantId, month, year);
 
     // Calculate totals
     let subtotal = 0;
@@ -181,6 +365,8 @@ router.post('/', async (req: AuthRequest, res, next) => {
     const invoice = await prisma.invoice.create({
       data: {
         invoiceNumber,
+        invoiceMonth: month,
+        invoiceYear: year,
         issueDate: data.issueDate,
         dueDate: data.dueDate,
         customerName: data.customerName,

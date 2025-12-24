@@ -14,6 +14,7 @@ import ExpenseReportsPage from './pages/ExpenseReportsPage';
 import ProfitLossPage from './pages/ProfitLossPage';
 import InvoicesPage from './pages/InvoicesPage';
 import CreateInvoicePage from './pages/CreateInvoicePage';
+import GenerateMonthlyInvoicePage from './pages/GenerateMonthlyInvoicePage';
 import ViewInvoicePage from './pages/ViewInvoicePage';
 import TenantsPage from './pages/TenantsPage';
 import PublicLaborerPage from './pages/PublicLaborerPage';
@@ -60,6 +61,7 @@ function App() {
           <Route path="/profit-loss" element={<Layout><ProfitLossPage /></Layout>} />
           <Route path="/invoices" element={<Layout><InvoicesPage /></Layout>} />
           <Route path="/invoices/new" element={<Layout><CreateInvoicePage /></Layout>} />
+          <Route path="/invoices/generate-monthly" element={<Layout><GenerateMonthlyInvoicePage /></Layout>} />
           <Route path="/invoices/:id" element={<Layout><ViewInvoicePage /></Layout>} />
           <Route path="/tenants" element={<Layout><TenantsPage /></Layout>} />
           <Route path="*" element={<Navigate to="/" replace />} />

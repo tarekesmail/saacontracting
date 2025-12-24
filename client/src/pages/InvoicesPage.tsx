@@ -168,13 +168,21 @@ export default function InvoicesPage() {
             Manage your KSA tax-compliant invoices
           </p>
         </div>
-        <button 
-          onClick={() => navigate('/invoices/new')}
-          className="btn-primary"
-        >
-          <PlusIcon className="h-4 w-4 mr-2" />
-          Create Invoice
-        </button>
+        <div className="flex space-x-3">
+          <button 
+            onClick={() => navigate('/invoices/generate-monthly')}
+            className="btn-secondary"
+          >
+            Generate Monthly Invoice
+          </button>
+          <button 
+            onClick={() => navigate('/invoices/new')}
+            className="btn-primary"
+          >
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Create Invoice
+          </button>
+        </div>
       </div>
 
       {/* Advanced Search */}

@@ -1,0 +1,106 @@
+/* Print styles for clean invoice printing */
+@media print {
+  /* Hide all non-essential elements */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Show only the invoice content */
+  .invoice-print-area,
+  .invoice-print-area * {
+    visibility: visible;
+  }
+  
+  /* Position the invoice content */
+  .invoice-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  
+  /* Hide navigation, sidebar, and other UI elements */
+  nav,
+  .sidebar,
+  .header,
+  .footer,
+  .btn,
+  .button,
+  .no-print {
+    display: none !important;
+  }
+  
+  /* Remove margins and padding from page */
+  @page {
+    margin: 0.5in;
+    size: A4;
+  }
+  
+  /* Ensure proper page breaks */
+  .invoice-content {
+    page-break-inside: avoid;
+  }
+  
+  /* Style adjustments for print */
+  .invoice-print-area {
+    font-size: 12pt;
+    line-height: 1.4;
+    color: black;
+    background: white;
+  }
+  
+  /* Table styles for print */
+  .invoice-print-area table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  
+  .invoice-print-area th,
+  .invoice-print-area td {
+    border: 1px solid #000;
+    padding: 8px;
+    text-align: left;
+  }
+  
+  .invoice-print-area th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+  }
+  
+  /* Remove shadows and rounded corners */
+  .invoice-print-area * {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  
+  /* Ensure QR code is visible */
+  .qr-code {
+    max-width: 100px;
+    height: auto;
+  }
+}
+
+/* Print button styles */
+.print-button {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.print-button:hover {
+  background: #2563eb;
+}
+
+@media print {
+  .print-button {
+    display: none;
+  }
+}

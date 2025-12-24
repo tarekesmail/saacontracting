@@ -126,7 +126,9 @@ model Expense {
 
 model Invoice {
   id              String   @id @default(cuid())
-  invoiceNumber   String   @unique // Sequential invoice number
+  invoiceNumber   String   // Sequential invoice number within the month
+  invoiceMonth    Int      // Month (1-12)
+  invoiceYear     Int      // Year (2024, 2025, etc.)
   issueDate       DateTime @db.Date
   dueDate         DateTime @db.Date
   
@@ -158,6 +160,7 @@ model Invoice {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   
+  @@unique([tenantId, invoiceNumber, invoiceMonth, invoiceYear]) // Unique per month
   @@map("invoices")
 }
 

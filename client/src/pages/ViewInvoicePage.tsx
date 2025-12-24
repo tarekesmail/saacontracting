@@ -137,7 +137,7 @@ export default function ViewInvoicePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between no-print">
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate('/invoices')}
@@ -196,8 +196,8 @@ export default function ViewInvoicePage() {
       </div>
 
       {/* Invoice Display */}
-      <div className="card p-8 print:shadow-none print:border-none">
-        <div className="max-w-4xl mx-auto">
+      <div className="card p-8 invoice-print-area">
+        <div className="max-w-4xl mx-auto invoice-content">
           {/* KSA Invoice Format */}
           <div className="space-y-8">
             {/* Header */}
@@ -301,10 +301,7 @@ export default function ViewInvoicePage() {
               <p>SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY</p>
             </div>
 
-            {/* Footer */}
-            <div className="text-center text-xs text-gray-500 pt-8 border-t">
-              <p>Powered by TopPower.com</p>
-            </div>
+            {/* Footer - Removed "Powered by TopPower.com" */}
           </div>
         </div>
       </div>

@@ -97,10 +97,12 @@ export default function PrintInvoicePage() {
         justify-content: space-between;
         margin-bottom: 30px;
         position: relative;
+        min-height: 160px;
       }
       
       .bill-to {
         flex: 1;
+        max-width: 50%;
       }
       
       .bill-to h3 {
@@ -115,9 +117,8 @@ export default function PrintInvoicePage() {
       .invoice-meta {
         text-align: right;
         flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
+        max-width: 35%;
+        margin-right: 170px;
       }
       
       .invoice-meta p {

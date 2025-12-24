@@ -249,23 +249,25 @@ export default function ViewInvoicePage() {
             </div>
 
             {/* Invoice Details */}
-            <div className="grid grid-cols-2 gap-8 relative">
-              <div>
-                <h3 className="font-bold mb-2">Bill To:</h3>
-                <p><strong>Name:</strong> {invoice.customerName}</p>
-                <p><strong>Address:</strong> {invoice.customerAddress}</p>
-                <p><strong>City:</strong> {invoice.customerCity}</p>
-                {invoice.customerVat && <p><strong>VAT:</strong> {invoice.customerVat}</p>}
-              </div>
-              <div className="text-right">
-                <div className="space-y-2">
-                  <p><strong>Invoice #:</strong> {invoice.invoiceNumber}</p>
-                  <p><strong>Invoice Date:</strong> {new Date(invoice.issueDate).toLocaleDateString()}</p>
-                  <p><strong>Due Date:</strong> {new Date(invoice.dueDate).toLocaleDateString()}</p>
+            <div className="relative min-h-40 mb-8">
+              <div className="grid grid-cols-2 gap-8">
+                <div className="max-w-md">
+                  <h3 className="font-bold mb-2">Bill To:</h3>
+                  <p><strong>Name:</strong> {invoice.customerName}</p>
+                  <p><strong>Address:</strong> {invoice.customerAddress}</p>
+                  <p><strong>City:</strong> {invoice.customerCity}</p>
+                  {invoice.customerVat && <p><strong>VAT:</strong> {invoice.customerVat}</p>}
+                </div>
+                <div className="text-right pr-40">
+                  <div className="space-y-2">
+                    <p><strong>Invoice #:</strong> {invoice.invoiceNumber}</p>
+                    <p><strong>Invoice Date:</strong> {new Date(invoice.issueDate).toLocaleDateString()}</p>
+                    <p><strong>Due Date:</strong> {new Date(invoice.dueDate).toLocaleDateString()}</p>
+                  </div>
                 </div>
               </div>
               
-              {/* QR Code - positioned at absolute right */}
+              {/* QR Code - positioned at absolute right with proper spacing */}
               {invoice.qrCode && (
                 <div className="absolute top-0 right-0">
                   <img 

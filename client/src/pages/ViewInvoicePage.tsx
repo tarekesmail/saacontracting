@@ -249,7 +249,7 @@ export default function ViewInvoicePage() {
             </div>
 
             {/* Invoice Details */}
-            <div className="grid grid-cols-2 gap-8">
+            <div className="grid grid-cols-2 gap-8 relative">
               <div>
                 <h3 className="font-bold mb-2">Bill To:</h3>
                 <p><strong>Name:</strong> {invoice.customerName}</p>
@@ -263,18 +263,18 @@ export default function ViewInvoicePage() {
                   <p><strong>Invoice Date:</strong> {new Date(invoice.issueDate).toLocaleDateString()}</p>
                   <p><strong>Due Date:</strong> {new Date(invoice.dueDate).toLocaleDateString()}</p>
                 </div>
-                
-                {/* QR Code - moved to right */}
-                {invoice.qrCode && (
-                  <div className="mt-4">
-                    <img 
-                      src={invoice.qrCode} 
-                      alt="ZATCA QR Code" 
-                      className="w-36 h-36 mx-auto border"
-                    />
-                  </div>
-                )}
               </div>
+              
+              {/* QR Code - positioned at absolute right */}
+              {invoice.qrCode && (
+                <div className="absolute top-0 right-0">
+                  <img 
+                    src={invoice.qrCode} 
+                    alt="ZATCA QR Code" 
+                    className="w-36 h-36 border"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Items Table */}

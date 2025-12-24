@@ -96,6 +96,7 @@ export default function PrintInvoicePage() {
         display: flex;
         justify-content: space-between;
         margin-bottom: 30px;
+        position: relative;
       }
       
       .bill-to {
@@ -124,7 +125,9 @@ export default function PrintInvoicePage() {
       }
       
       .qr-code {
-        margin-top: 15px;
+        position: absolute;
+        top: 0;
+        right: 0;
         text-align: right;
       }
       
@@ -306,14 +309,14 @@ export default function PrintInvoicePage() {
               <p><strong>Invoice Date:</strong> {new Date(invoice.issueDate).toLocaleDateString()}</p>
               <p><strong>Due Date:</strong> {new Date(invoice.dueDate).toLocaleDateString()}</p>
             </div>
-            
-            {/* QR Code - moved to right side */}
-            {invoice.qrCode && (
-              <div className="qr-code">
-                <img src={invoice.qrCode} alt="ZATCA QR Code" />
-              </div>
-            )}
           </div>
+          
+          {/* QR Code - positioned at max right */}
+          {invoice.qrCode && (
+            <div className="qr-code">
+              <img src={invoice.qrCode} alt="ZATCA QR Code" />
+            </div>
+          )}
         </div>
 
         {/* Items Table */}

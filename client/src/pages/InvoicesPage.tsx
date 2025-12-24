@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -22,6 +23,7 @@ export default function InvoicesPage() {
   const [pageSize, setPageSize] = useState(25);
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: invoicesData, isLoading } = useQuery(
     ['invoices', currentPage, searchParams, pageSize],
@@ -167,7 +169,7 @@ export default function InvoicesPage() {
           </p>
         </div>
         <button 
-          onClick={() => window.location.href = '/invoices/new'}
+          onClick={() => navigate('/invoices/new')}
           className="btn-primary"
         >
           <PlusIcon className="h-4 w-4 mr-2" />
@@ -254,7 +256,7 @@ export default function InvoicesPage() {
                 <td className="table-cell">
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => window.location.href = `/invoices/${invoice.id}`}
+                      onClick={() => navigate(`/invoices/${invoice.id}`)}
                       className="text-blue-600 hover:text-blue-900"
                       title="View Invoice"
                     >

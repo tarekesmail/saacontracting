@@ -13,6 +13,7 @@
     width: 100% !important;
     height: 100% !important;
     background: white !important;
+    font-family: Arial, sans-serif !important;
   }
   
   /* Hide UI elements */
@@ -52,23 +53,44 @@
     color: black !important;
   }
   
+  /* Ensure proper font rendering */
+  .invoice-print-area * {
+    font-family: Arial, sans-serif !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+  }
+  
   .invoice-print-area h1 {
     font-size: 16pt !important;
     margin: 0 0 10px 0 !important;
+    font-weight: bold !important;
+    font-family: Arial, sans-serif !important;
   }
   
   .invoice-print-area h2 {
     font-size: 14pt !important;
     margin: 0 0 8px 0 !important;
+    font-weight: bold !important;
+    font-family: Arial, sans-serif !important;
   }
   
   .invoice-print-area h3 {
     font-size: 12pt !important;
     margin: 0 0 6px 0 !important;
+    font-weight: bold !important;
+    font-family: Arial, sans-serif !important;
   }
   
   .invoice-print-area p {
     margin: 2px 0 !important;
+    font-family: Arial, sans-serif !important;
+  }
+  
+  /* Arabic text styling */
+  .invoice-print-area .arabic {
+    font-family: Arial, sans-serif !important;
+    direction: rtl !important;
+    text-align: right !important;
   }
   
   /* Table styles for print */
@@ -76,6 +98,7 @@
     border-collapse: collapse !important;
     width: 100% !important;
     margin: 10px 0 !important;
+    font-family: Arial, sans-serif !important;
   }
   
   .invoice-print-area th,
@@ -84,6 +107,7 @@
     padding: 6px !important;
     text-align: left !important;
     font-size: 10pt !important;
+    font-family: Arial, sans-serif !important;
   }
   
   .invoice-print-area th {

@@ -10,7 +10,8 @@ import {
   ClockIcon,
   ExclamationTriangleIcon,
   XCircleIcon,
-  PrinterIcon
+  PrinterIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
@@ -81,6 +82,25 @@ export default function ViewInvoicePage() {
     // Open print page in new window
     const printUrl = `/print/invoice/${id}`;
     window.open(printUrl, '_blank', 'width=800,height=600');
+  };
+
+  const deleteInvoiceMutation = useMutation(
+    () => api.delete(`/invoices/${id}`),
+    {
+      onSuccess: () => {
+        toast.success('Invoice deleted successfully');
+        navigate('/invoices');
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.error || 'Failed to delete invoice');
+      }
+    }
+  );
+
+  const handleDeleteInvoice = () => {
+    if (window.confirm(`Are you sure you want to delete Invoice #${invoice?.invoiceNumber}? This action cannot be undone.`)) {
+      deleteInvoiceMutation.mutate();
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -195,6 +215,17 @@ export default function ViewInvoicePage() {
             <DocumentArrowDownIcon className="h-4 w-4 mr-2" />
             Download PDF
           </button>
+          
+          {invoice.status === 'DRAFT' && (
+            <button
+              onClick={handleDeleteInvoice}
+              className="btn-danger"
+              disabled={deleteInvoiceMutation.isLoading}
+            >
+              <TrashIcon className="h-4 w-4 mr-2" />
+              {deleteInvoiceMutation.isLoading ? 'Deleting...' : 'Delete'}
+            </button>
+          )}
         </div>
       </div>
 

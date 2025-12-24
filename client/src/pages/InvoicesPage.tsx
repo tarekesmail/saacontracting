@@ -11,6 +11,7 @@ import {
   EyeIcon, 
   DocumentArrowDownIcon,
   PrinterIcon,
+  TrashIcon,
   CheckCircleIcon,
   ClockIcon,
   ExclamationTriangleIcon,
@@ -110,6 +111,25 @@ export default function InvoicesPage() {
     // Open print page in new window
     const printUrl = `/print/invoice/${invoiceId}`;
     window.open(printUrl, '_blank', 'width=800,height=600');
+  };
+
+  const deleteInvoiceMutation = useMutation(
+    (invoiceId: string) => api.delete(`/invoices/${invoiceId}`),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries('invoices');
+        toast.success('Invoice deleted successfully');
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.error || 'Failed to delete invoice');
+      }
+    }
+  );
+
+  const handleDeleteInvoice = (invoiceId: string, invoiceNumber: string) => {
+    if (window.confirm(`Are you sure you want to delete Invoice #${invoiceNumber}? This action cannot be undone.`)) {
+      deleteInvoiceMutation.mutate(invoiceId);
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -291,6 +311,16 @@ export default function InvoicesPage() {
                     >
                       <DocumentArrowDownIcon className="h-4 w-4" />
                     </button>
+                    {invoice.status === 'DRAFT' && (
+                      <button
+                        onClick={() => handleDeleteInvoice(invoice.id, invoice.invoiceNumber)}
+                        className="text-red-600 hover:text-red-900"
+                        title="Delete Invoice"
+                        disabled={deleteInvoiceMutation.isLoading}
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </button>
+                    )}
                     {invoice.status !== 'PAID' && invoice.status !== 'CANCELLED' && (
                       <select
                         value={invoice.status}

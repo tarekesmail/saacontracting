@@ -18,11 +18,12 @@ type JobForm = z.infer<typeof jobSchema>;
 export default function JobsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<any>(null);
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Since we have a single admin login, all authenticated users can edit and delete
-  const canEdit = true;
-  const canDelete = true;
+  // Check user permissions
+  const canEdit = user?.role === 'ADMIN';
+  const canDelete = user?.role === 'ADMIN';
 
   const { data: jobs, isLoading } = useQuery(['jobs'], async () => {
     const response = await api.get('/jobs');

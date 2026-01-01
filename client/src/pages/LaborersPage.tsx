@@ -34,9 +34,9 @@ export default function LaborersPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Since we have a single admin login, all authenticated users can edit and delete
-  const canEdit = true;
-  const canDelete = true;
+  // Check user permissions
+  const canEdit = user?.role === 'ADMIN';
+  const canDelete = user?.role === 'ADMIN';
 
   // Memoize the query key to prevent unnecessary re-renders
   const queryKey = useMemo(() => [

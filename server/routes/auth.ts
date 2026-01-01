@@ -5,17 +5,31 @@ import { PrismaClient } from '@prisma/client';
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Simple hardcoded credentials
-const ADMIN_USERNAME = 'admin';
-const ADMIN_PASSWORD = 'saacontracting2024';
+import express from 'express';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import { PrismaClient } from '@prisma/client';
 
-// Login with tenant selection
+const router = express.Router();
+const prisma = new PrismaClient();
+
+// Login with user authentication
 router.post('/login', async (req, res, next) => {
   try {
     const { username, password, tenantId } = req.body;
 
-    // Check credentials
-    if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+    // Find user by username
+    const user = await prisma.user.findUnique({
+      where: { username }
+    });
+
+    if (!user || !user.isActive) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Check password
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -33,7 +47,12 @@ router.post('/login', async (req, res, next) => {
 
     // Create session token
     const token = jwt.sign(
-      { username, tenantId: tenant?.id || null },
+      { 
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        tenantId: tenant?.id || null 
+      },
       process.env.JWT_SECRET || 'simple-secret',
       { expiresIn: '24h' }
     );
@@ -41,7 +60,11 @@ router.post('/login', async (req, res, next) => {
     res.json({
       token,
       user: {
-        username,
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        email: user.email,
+        role: user.role,
         tenant: tenant ? {
           id: tenant.id,
           name: tenant.name

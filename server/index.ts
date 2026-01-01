@@ -12,6 +12,7 @@ import { publicRoutes } from './routes/public';
 import { expenseCategoryRoutes } from './routes/expense-categories';
 import { expenseRoutes } from './routes/expenses';
 import { invoiceRoutes } from './routes/invoices';
+import userRoutes from './routes/users';
 import { errorHandler } from './middleware/errorHandler';
 import { authenticateToken, requireTenant } from './middleware/auth';
 
@@ -48,6 +49,7 @@ app.use(express.urlencoded({ extended: true }));
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/public', publicRoutes); // Public routes (no auth required)
+app.use('/api/users', authenticateToken, userRoutes); // User management (admin only)
 app.use('/api/laborers', authenticateToken, requireTenant, laborerRoutes);
 app.use('/api/jobs', authenticateToken, requireTenant, jobRoutes);
 app.use('/api/timesheets', authenticateToken, requireTenant, timesheetRoutes);

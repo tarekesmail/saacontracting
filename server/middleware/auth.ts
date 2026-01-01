@@ -3,7 +3,9 @@ import jwt from 'jsonwebtoken';
 
 export interface AuthRequest extends Request {
   user?: {
+    id: string;
     username: string;
+    role: string;
     tenantId: string | null;
   };
 }
@@ -19,7 +21,9 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'simple-secret') as any;
     req.user = {
+      id: decoded.id,
       username: decoded.username,
+      role: decoded.role,
       tenantId: decoded.tenantId
     };
     next();
@@ -34,3 +38,6 @@ export const requireTenant = (req: AuthRequest, res: Response, next: NextFunctio
   }
   next();
 };
+
+// Convenience export
+export const auth = authenticateToken;

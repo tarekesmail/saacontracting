@@ -2,7 +2,11 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../lib/api';
 
 interface User {
+  id: string;
   username: string;
+  name: string;
+  email: string;
+  role: 'ADMIN' | 'READ_ONLY';
   tenant: {
     id: string;
     name: string;

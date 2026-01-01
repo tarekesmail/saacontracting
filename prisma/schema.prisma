@@ -7,6 +7,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String   // Hashed password
+  name      String
+  email     String   @unique
+  role      UserRole @default(READ_ONLY)
+  isActive  Boolean  @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
 model Tenant {
   id        String   @id @default(cuid())
   name      String   @unique
@@ -189,4 +204,9 @@ enum InvoiceStatus {
   PAID
   OVERDUE
   CANCELLED
+}
+
+enum UserRole {
+  ADMIN
+  READ_ONLY
 }

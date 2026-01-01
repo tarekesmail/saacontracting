@@ -43,8 +43,11 @@ router.post('/login', async (req, res, next) => {
       { 
         id: user.id,
         username: user.username,
+        name: user.name,
+        email: user.email,
         role: user.role,
-        tenantId: tenant?.id || null 
+        tenantId: tenant?.id || null,
+        tenantName: tenant?.name || null
       },
       process.env.JWT_SECRET || 'simple-secret',
       { expiresIn: '24h' }
@@ -174,6 +177,76 @@ router.delete('/tenants/:id', async (req, res, next) => {
     });
 
     res.json({ message: 'Tenant deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Switch tenant for current user
+router.post('/switch-tenant', async (req, res, next) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ error: 'Access token required' });
+    }
+
+    // Verify current token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'simple-secret') as any;
+    
+    // Find the user
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id }
+    });
+
+    if (!user || !user.isActive) {
+      return res.status(401).json({ error: 'Invalid user' });
+    }
+
+    const { tenantId } = req.body;
+
+    // If tenantId provided, verify it exists
+    let tenant = null;
+    if (tenantId) {
+      tenant = await prisma.tenant.findUnique({
+        where: { id: tenantId }
+      });
+      
+      if (!tenant) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+    }
+
+    // Create new session token with updated tenant
+    const newToken = jwt.sign(
+      { 
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        tenantId: tenant?.id || null,
+        tenantName: tenant?.name || null
+      },
+      process.env.JWT_SECRET || 'simple-secret',
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      token: newToken,
+      user: {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        tenant: tenant ? {
+          id: tenant.id,
+          name: tenant.name
+        } : null
+      }
+    });
   } catch (error) {
     next(error);
   }

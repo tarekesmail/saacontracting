@@ -17,6 +17,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (username: string, password: string, tenantId?: string) => Promise<void>;
+  switchTenant: (tenantId: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -33,11 +34,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Try to get user info from token
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        // For now, we'll just set a basic user object
-        // In a real app, you might want to validate the token with the server
+        // Set user object from token payload
         setUser({
+          id: payload.id,
           username: payload.username,
-          tenant: null // Will be set when tenant is selected
+          name: payload.name || payload.username, // Fallback to username if name not available
+          email: payload.email || '',
+          role: payload.role || 'READ_ONLY',
+          tenant: payload.tenantId ? {
+            id: payload.tenantId,
+            name: payload.tenantName || 'Selected Tenant'
+          } : null
         });
       } catch (error) {
         console.error('Invalid token:', error);
@@ -61,6 +68,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(user);
   };
 
+  const switchTenant = async (tenantId: string) => {
+    const response = await api.post('/auth/switch-tenant', {
+      tenantId,
+    });
+
+    const { token, user } = response.data;
+    localStorage.setItem('token', token);
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    setUser(user);
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     delete api.defaults.headers.common['Authorization'];
@@ -68,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, switchTenant, logout }}>
       {children}
     </AuthContext.Provider>
   );

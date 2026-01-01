@@ -5,6 +5,8 @@ export interface AuthRequest extends Request {
   user?: {
     id: string;
     username: string;
+    name: string;
+    email: string;
     role: string;
     tenantId: string | null;
   };
@@ -23,6 +25,8 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
     req.user = {
       id: decoded.id,
       username: decoded.username,
+      name: decoded.name,
+      email: decoded.email,
       role: decoded.role,
       tenantId: decoded.tenantId
     };

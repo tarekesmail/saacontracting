@@ -26,7 +26,7 @@ export default function TenantSelectionPage() {
   const [creatingTenant, setCreatingTenant] = useState(false);
   const [selectingTenant, setSelectingTenant] = useState<string | null>(null);
   const [deletingTenant, setDeletingTenant] = useState<string | null>(null);
-  const { user, login, logout } = useAuth();
+  const { user, switchTenant, logout } = useAuth();
 
   const {
     register,
@@ -57,8 +57,8 @@ export default function TenantSelectionPage() {
     
     setSelectingTenant(tenantId);
     try {
-      // Re-login with the selected tenant
-      await login(user.username, 'saacontracting2024', tenantId);
+      // Switch to the selected tenant using the new endpoint
+      await switchTenant(tenantId);
       toast.success('Tenant selected successfully!');
     } catch (error) {
       toast.error('Failed to select tenant');

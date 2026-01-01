@@ -65,7 +65,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const expenseDropdownRef = useRef<HTMLDivElement>(null);
   const reportsDropdownRef = useRef<HTMLDivElement>(null);
-  const { user, login, logout } = useAuth();
+  const { user, switchTenant, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -122,7 +122,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     setTenantDropdownOpen(false);
     
     try {
-      await login(user.username, 'saacontracting2024', tenantId);
+      await switchTenant(tenantId);
       toast.success('Switched tenant successfully!');
     } catch (error) {
       toast.error('Failed to switch tenant');

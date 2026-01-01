@@ -29,8 +29,8 @@
     "express-rate-limit": "^7.1.5",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
-    "pdfkit": "^0.17.2",
     "prisma": "^5.7.1",
+    "puppeteer": "^24.34.0",
     "qrcode": "^1.5.4",
     "zod": "^3.22.4"
   },

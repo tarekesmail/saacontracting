@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { AuthRequest } from '../middleware/auth';
 import QRCode from 'qrcode';
-import PDFDocument from 'pdfkit';
+import puppeteer from 'puppeteer';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -526,7 +526,7 @@ router.patch('/:id/status', async (req: AuthRequest, res, next) => {
   }
 });
 
-// Generate PDF invoice
+// Generate PDF invoice using Puppeteer for perfect HTML/CSS rendering
 router.get('/:id/pdf', async (req: AuthRequest, res, next) => {
   try {
     const invoice = await prisma.invoice.findFirst({
@@ -544,78 +544,393 @@ router.get('/:id/pdf', async (req: AuthRequest, res, next) => {
       return res.status(404).json({ error: 'Invoice not found' });
     }
 
-    // Create PDF
-    const doc = new PDFDocument({ margin: 50 });
+    // Generate HTML content that matches the print version exactly
+    const htmlContent = generateInvoiceHTML(invoice);
+
+    // Launch Puppeteer
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+
+    const page = await browser.newPage();
     
+    // Set content with proper encoding for Arabic text
+    await page.setContent(htmlContent, { 
+      waitUntil: 'networkidle0',
+      timeout: 30000
+    });
+
+    // Generate PDF with proper settings
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      margin: {
+        top: '0.5in',
+        right: '0.5in',
+        bottom: '0.5in',
+        left: '0.5in'
+      },
+      printBackground: true,
+      preferCSSPageSize: true
+    });
+
+    await browser.close();
+
     // Set response headers
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=invoice-${invoice.invoiceNumber}.pdf`);
     
-    // Pipe PDF to response
-    doc.pipe(res);
-
-    // Company Header
-    doc.fontSize(20).text('SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY', 50, 50);
-    doc.fontSize(14).text('شركة صالح عبدالله المالكي للمقاولات العامة', 50, 75);
-    doc.fontSize(10).text('VAT: 312886534600003', 50, 95);
-    doc.text('Email: tawaffallah@gmail.com', 50, 110);
-
-    // Invoice Title
-    doc.fontSize(18).text('Tax Invoice', 250, 150);
-    doc.text('فاتورة ضريبية', 250, 175);
-
-    // Invoice Details
-    doc.fontSize(10);
-    doc.text(`Invoice #: ${invoice.invoiceNumber}`, 400, 220);
-    doc.text(`Invoice Date: ${invoice.issueDate.toLocaleDateString()}`, 400, 235);
-    doc.text(`Due Date: ${invoice.dueDate.toLocaleDateString()}`, 400, 250);
-
-    // Customer Details
-    doc.text('Bill To:', 50, 220);
-    doc.text(`Name: ${invoice.customerName}`, 50, 235);
-    doc.text(`Address: ${invoice.customerAddress}`, 50, 250);
-    doc.text(`City: ${invoice.customerCity}`, 50, 265);
-    if (invoice.customerVat) {
-      doc.text(`VAT: ${invoice.customerVat}`, 50, 280);
-    }
-
-    // Items Table
-    const tableTop = 320;
-    doc.text('Description', 50, tableTop);
-    doc.text('Qty', 200, tableTop);
-    doc.text('Rate', 250, tableTop);
-    doc.text('Amount', 300, tableTop);
-    doc.text('VAT', 350, tableTop);
-    doc.text('Total', 400, tableTop);
-
-    let yPosition = tableTop + 20;
-    invoice.items.forEach((item) => {
-      doc.text(item.description, 50, yPosition);
-      doc.text(item.quantity.toString(), 200, yPosition);
-      doc.text(item.unitPrice.toString(), 250, yPosition);
-      doc.text(item.lineTotal.toString(), 300, yPosition);
-      doc.text(item.vatAmount.toString(), 350, yPosition);
-      doc.text(item.totalAmount.toString(), 400, yPosition);
-      yPosition += 20;
-    });
-
-    // Totals
-    yPosition += 20;
-    doc.text(`Subtotal: ${invoice.subtotal} SAR`, 300, yPosition);
-    doc.text(`VAT (15%): ${invoice.vatAmount} SAR`, 300, yPosition + 15);
-    doc.text(`Total: ${invoice.totalAmount} SAR`, 300, yPosition + 30);
-
-    // QR Code (if available)
-    if (invoice.qrCode) {
-      // Note: You'd need to decode the base64 QR code and add it to the PDF
-      doc.text('QR Code for ZATCA compliance included', 50, yPosition + 60);
-    }
-
-    doc.end();
+    // Send PDF buffer
+    res.send(pdfBuffer);
   } catch (error) {
+    console.error('PDF generation error:', error);
     next(error);
   }
 });
+
+// Helper function to generate HTML content for PDF
+function generateInvoiceHTML(invoice: any): string {
+  const numberToWords = (num: number): string => {
+    // Simple number to words conversion for SAR
+    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+    const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    const thousands = ['', 'Thousand', 'Million', 'Billion'];
+
+    if (num === 0) return 'Zero Saudi Riyals Only';
+
+    const convert = (n: number): string => {
+      if (n < 10) return ones[n];
+      if (n < 20) return teens[n - 10];
+      if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
+      if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' ' + convert(n % 100) : '');
+      
+      for (let i = 0; i < thousands.length; i++) {
+        const unit = Math.pow(1000, i + 1);
+        if (n < unit) {
+          const quotient = Math.floor(n / Math.pow(1000, i));
+          const remainder = n % Math.pow(1000, i);
+          return convert(quotient) + ' ' + thousands[i] + (remainder !== 0 ? ' ' + convert(remainder) : '');
+        }
+      }
+      return '';
+    };
+
+    const integerPart = Math.floor(num);
+    const decimalPart = Math.round((num - integerPart) * 100);
+    
+    let result = convert(integerPart) + ' Saudi Riyal' + (integerPart !== 1 ? 's' : '');
+    if (decimalPart > 0) {
+      result += ' and ' + convert(decimalPart) + ' Halala' + (decimalPart !== 1 ? 's' : '');
+    }
+    return result + ' Only';
+  };
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice ${invoice.invoiceNumber}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Arial:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: black;
+            background: white;
+            padding: 20px;
+        }
+        
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+        }
+        
+        .company-info {
+            flex: 1;
+        }
+        
+        .company-info h1 {
+            font-size: 18pt;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .company-info .arabic {
+            font-size: 16pt;
+            margin-bottom: 10px;
+            font-family: Arial, sans-serif;
+            direction: rtl;
+            text-align: right;
+        }
+        
+        .company-info p {
+            font-size: 10pt;
+            margin: 2px 0;
+            font-family: Arial, sans-serif;
+        }
+        
+        .invoice-title {
+            text-align: right;
+            flex: 1;
+        }
+        
+        .invoice-title h2 {
+            font-size: 18pt;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .invoice-title .arabic {
+            font-size: 16pt;
+            font-family: Arial, sans-serif;
+            direction: rtl;
+            text-align: right;
+        }
+        
+        .invoice-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        
+        .bill-to {
+            flex: 1;
+            max-width: 50%;
+        }
+        
+        .bill-to h3 {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .bill-to p {
+            margin: 3px 0;
+            font-family: Arial, sans-serif;
+        }
+        
+        .invoice-meta {
+            text-align: right;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        
+        .invoice-meta p {
+            margin: 3px 0;
+            font-family: Arial, sans-serif;
+        }
+        
+        .qr-code {
+            margin-top: 15px;
+            text-align: right;
+        }
+        
+        .qr-code img {
+            width: 150px;
+            height: 150px;
+            border: 1px solid #ccc;
+        }
+        
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .items-table th,
+        .items-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+            font-size: 10pt;
+            font-family: Arial, sans-serif;
+        }
+        
+        .items-table th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .items-table .text-center {
+            text-align: center;
+        }
+        
+        .items-table .text-right {
+            text-align: right;
+        }
+        
+        .total-row {
+            background-color: #f8f8f8;
+            font-weight: bold;
+        }
+        
+        .summary {
+            display: flex;
+            justify-content: flex-end;
+            margin: 20px 0;
+        }
+        
+        .summary-box {
+            width: 300px;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .summary-row.total {
+            border-top: 2px solid #000;
+            font-weight: bold;
+            font-size: 12pt;
+        }
+        
+        .bank-details {
+            margin-top: 30px;
+            font-size: 10pt;
+            color: #666;
+        }
+        
+        .bank-details p {
+            margin: 2px 0;
+            font-family: Arial, sans-serif;
+        }
+        
+        .amount-words {
+            margin: 20px 0;
+            font-size: 10pt;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="company-info">
+                <h1>SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY</h1>
+                <div class="arabic">شركة صالح عبدالله المالكي للمقاولات العامة</div>
+                <p><strong>VAT:</strong> 312886534600003</p>
+                <p><strong>Email:</strong> tawaffallah@gmail.com</p>
+            </div>
+            <div class="invoice-title">
+                <h2>Tax Invoice</h2>
+                <div class="arabic">فاتورة ضريبية</div>
+            </div>
+        </div>
+
+        <!-- Invoice Details -->
+        <div class="invoice-details">
+            <div class="bill-to">
+                <h3>Bill To:</h3>
+                <p><strong>Name:</strong> ${invoice.customerName}</p>
+                <p><strong>Address:</strong> ${invoice.customerAddress}</p>
+                <p><strong>City:</strong> ${invoice.customerCity}</p>
+                ${invoice.customerVat ? `<p><strong>VAT:</strong> ${invoice.customerVat}</p>` : ''}
+            </div>
+            <div class="invoice-meta">
+                <div>
+                    <p><strong>Invoice #:</strong> ${invoice.invoiceNumber}</p>
+                    <p><strong>Invoice Date:</strong> ${new Date(invoice.issueDate).toLocaleDateString()}</p>
+                    <p><strong>Due Date:</strong> ${new Date(invoice.dueDate).toLocaleDateString()}</p>
+                </div>
+                
+                ${invoice.qrCode ? `
+                <div class="qr-code">
+                    <img src="${invoice.qrCode}" alt="ZATCA QR Code" />
+                </div>
+                ` : ''}
+            </div>
+        </div>
+
+        <!-- Items Table -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Description</th>
+                    <th>Qty</th>
+                    <th>Rate</th>
+                    <th>Taxable Amount</th>
+                    <th>Tax (SAR)</th>
+                    <th>Net Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${invoice.items.map((item: any, index: number) => `
+                <tr>
+                    <td class="text-center">${index + 1}</td>
+                    <td>${item.description}</td>
+                    <td class="text-center">${parseFloat(item.quantity).toFixed(2)}</td>
+                    <td class="text-right">${parseFloat(item.unitPrice).toFixed(2)}</td>
+                    <td class="text-right">${parseFloat(item.lineTotal).toFixed(2)}</td>
+                    <td class="text-right">${parseFloat(item.vatAmount).toFixed(2)}</td>
+                    <td class="text-right">${parseFloat(item.totalAmount).toFixed(2)}</td>
+                </tr>
+                `).join('')}
+                <tr class="total-row">
+                    <td colspan="4" class="text-right">Total</td>
+                    <td class="text-right">${parseFloat(invoice.subtotal).toFixed(2)}</td>
+                    <td class="text-right">${parseFloat(invoice.vatAmount).toFixed(2)}</td>
+                    <td class="text-right">${parseFloat(invoice.totalAmount).toFixed(2)}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Total Summary -->
+        <div class="summary">
+            <div class="summary-box">
+                <div class="summary-row total">
+                    <span>Net Amount:</span>
+                    <span>SAR ${parseFloat(invoice.totalAmount).toFixed(2)}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Amount in Words -->
+        <div class="amount-words">
+            <p><strong>Amount in Words:</strong> ${numberToWords(parseFloat(invoice.totalAmount))}</p>
+        </div>
+
+        <!-- Bank Details -->
+        <div class="bank-details">
+            <p><strong>Bank Details:</strong></p>
+            <p>Account Number: 379000100006865704167</p>
+            <p>IBAN Number: SA6600003790001000068657041</p>
+            <p>Al rajhi Bank مصرف الراجحي للاستثمار</p>
+            <p>SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY</p>
+        </div>
+    </div>
+</body>
+</html>
+  `;
+}
 
 // Delete invoice
 router.delete('/:id', async (req: AuthRequest, res, next) => {

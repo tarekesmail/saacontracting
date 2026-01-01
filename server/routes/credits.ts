@@ -283,4 +283,126 @@ router.get('/summary/stats', async (req: AuthRequest, res, next) => {
   }
 });
 
+// Generate credit report
+router.get('/reports/detailed', async (req: AuthRequest, res, next) => {
+  try {
+    const { startDate, endDate, groupBy = 'month' } = req.query;
+    
+    const where: any = {
+      tenantId: req.user!.tenantId!
+    };
+
+    if (startDate && endDate) {
+      where.date = {
+        gte: new Date(startDate as string),
+        lte: new Date(endDate as string)
+      };
+    }
+
+    const credits = await prisma.credit.findMany({
+      where,
+      orderBy: { date: 'asc' }
+    });
+
+    // Group credits by specified period
+    const groupedData: { [key: string]: {
+      period: string;
+      deposits: number;
+      withdrawals: number;
+      advances: number;
+      netFlow: number;
+      runningBalance: number;
+      transactionCount: number;
+      transactions: any[];
+    }} = {};
+
+    let runningBalance = 0;
+
+    credits.forEach(credit => {
+      const amount = Number(credit.amount);
+      const date = new Date(credit.date);
+      
+      // Determine grouping key
+      let groupKey: string;
+      if (groupBy === 'day') {
+        groupKey = date.toISOString().split('T')[0];
+      } else if (groupBy === 'week') {
+        const startOfWeek = new Date(date);
+        startOfWeek.setDate(date.getDate() - date.getDay());
+        groupKey = startOfWeek.toISOString().split('T')[0];
+      } else if (groupBy === 'year') {
+        groupKey = date.getFullYear().toString();
+      } else { // month (default)
+        groupKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      }
+
+      if (!groupedData[groupKey]) {
+        groupedData[groupKey] = {
+          period: groupKey,
+          deposits: 0,
+          withdrawals: 0,
+          advances: 0,
+          netFlow: 0,
+          runningBalance: 0,
+          transactionCount: 0,
+          transactions: []
+        };
+      }
+
+      const group = groupedData[groupKey];
+      
+      // Update amounts by type
+      switch (credit.type) {
+        case 'DEPOSIT':
+          group.deposits += amount;
+          runningBalance += amount;
+          break;
+        case 'WITHDRAWAL':
+          group.withdrawals += amount;
+          runningBalance -= amount;
+          break;
+        case 'ADVANCE':
+          group.advances += amount;
+          runningBalance += amount;
+          break;
+      }
+
+      group.transactionCount++;
+      group.transactions.push({
+        ...credit,
+        amount: amount
+      });
+      group.runningBalance = runningBalance;
+      group.netFlow = group.deposits + group.advances - group.withdrawals;
+    });
+
+    // Convert to array and sort
+    const reportData = Object.values(groupedData).sort((a, b) => 
+      a.period.localeCompare(b.period)
+    );
+
+    // Calculate totals
+    const totals = {
+      totalDeposits: credits.filter(c => c.type === 'DEPOSIT').reduce((sum, c) => sum + Number(c.amount), 0),
+      totalWithdrawals: credits.filter(c => c.type === 'WITHDRAWAL').reduce((sum, c) => sum + Number(c.amount), 0),
+      totalAdvances: credits.filter(c => c.type === 'ADVANCE').reduce((sum, c) => sum + Number(c.amount), 0),
+      totalTransactions: credits.length,
+      finalBalance: runningBalance
+    };
+
+    res.json({
+      reportData,
+      totals,
+      filters: {
+        startDate,
+        endDate,
+        groupBy
+      },
+      generatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export { router as creditRoutes };

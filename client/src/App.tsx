@@ -20,6 +20,7 @@ import PrintInvoicePage from './pages/PrintInvoicePage';
 import TenantsPage from './pages/TenantsPage';
 import UsersPage from './pages/UsersPage';
 import CreditsPage from './pages/CreditsPage';
+import CreditReportsPage from './pages/CreditReportsPage';
 import SuppliesPage from './pages/SuppliesPage';
 import PublicLaborerPage from './pages/PublicLaborerPage';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -71,6 +72,7 @@ function App() {
           <Route path="/tenants" element={<Layout><TenantsPage /></Layout>} />
           <Route path="/users" element={<Layout><UsersPage /></Layout>} />
           <Route path="/credits" element={<Layout><CreditsPage /></Layout>} />
+          <Route path="/credit-reports" element={<Layout><CreditReportsPage /></Layout>} />
           <Route path="/supplies" element={<Layout><SuppliesPage /></Layout>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </>

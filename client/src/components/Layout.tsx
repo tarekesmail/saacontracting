@@ -43,7 +43,14 @@ const navigation = [
   },
   { name: 'Reports', href: '/reports', icon: DocumentChartBarIcon },
   { name: 'P&L Report', href: '/profit-loss', icon: ChartBarSquareIcon },
-  { name: 'Credits', href: '/credits', icon: CreditCardIcon },
+  { 
+    name: 'Credits', 
+    icon: CreditCardIcon,
+    children: [
+      { name: 'Manage Credits', href: '/credits' },
+      { name: 'Credit Reports', href: '/credit-reports' }
+    ]
+  },
   { name: 'Supplies', href: '/supplies', icon: CubeIcon },
   { name: 'Tenants', href: '/tenants', icon: Cog6ToothIcon },
   { name: 'Users', href: '/users', icon: UserGroupIcon },
@@ -59,12 +66,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [tenantDropdownOpen, setTenantDropdownOpen] = useState(false);
   const [expenseDropdownOpen, setExpenseDropdownOpen] = useState(false);
   const [reportsDropdownOpen, setReportsDropdownOpen] = useState(false);
+  const [creditsDropdownOpen, setCreditsDropdownOpen] = useState(false);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loadingTenants, setLoadingTenants] = useState(false);
   const [switchingTenant, setSwitchingTenant] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const expenseDropdownRef = useRef<HTMLDivElement>(null);
   const reportsDropdownRef = useRef<HTMLDivElement>(null);
+  const creditsDropdownRef = useRef<HTMLDivElement>(null);
   const { user, switchTenant, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -80,6 +89,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       }
       if (reportsDropdownRef.current && !reportsDropdownRef.current.contains(event.target as Node)) {
         setReportsDropdownOpen(false);
+      }
+      if (creditsDropdownRef.current && !creditsDropdownRef.current.contains(event.target as Node)) {
+        setCreditsDropdownOpen(false);
       }
     };
 
@@ -141,6 +153,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     setTenantDropdownOpen(false);
     setExpenseDropdownOpen(false);
     setReportsDropdownOpen(false);
+    setCreditsDropdownOpen(false);
+    setCreditsDropdownOpen(false);
     logout();
   };
 
@@ -148,12 +162,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     if (item.children) {
       const isActive = item.children.some((child: any) => location.pathname === child.href);
       const isOpen = item.name === 'Expenses' ? expenseDropdownOpen : 
-                    item.name === 'Reports' ? reportsDropdownOpen : false;
+                    item.name === 'Reports' ? reportsDropdownOpen :
+                    item.name === 'Credits' ? creditsDropdownOpen : false;
       
       return (
         <div className="relative" ref={
           item.name === 'Expenses' ? expenseDropdownRef : 
-          item.name === 'Reports' ? reportsDropdownRef : undefined
+          item.name === 'Reports' ? reportsDropdownRef :
+          item.name === 'Credits' ? creditsDropdownRef : undefined
         }>
           <button
             onClick={() => {
@@ -161,6 +177,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 setExpenseDropdownOpen(!expenseDropdownOpen);
               } else if (item.name === 'Reports') {
                 setReportsDropdownOpen(!reportsDropdownOpen);
+              } else if (item.name === 'Credits') {
+                setCreditsDropdownOpen(!creditsDropdownOpen);
               }
             }}
             className={`group flex items-center w-full px-2 py-2 text-sm font-medium rounded-md transition-colors ${
@@ -184,6 +202,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     setSidebarOpen(false);
                     setExpenseDropdownOpen(false);
                     setReportsDropdownOpen(false);
+                    setCreditsDropdownOpen(false);
                   }}
                   className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
                     location.pathname === child.href

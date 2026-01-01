@@ -1,7 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
-import { auth } from '../middleware/auth';
+import { auth, AuthRequest } from '../middleware/auth';
 import { z } from 'zod';
 
 const router = express.Router();
@@ -24,15 +24,15 @@ const updateUserSchema = z.object({
 });
 
 // Middleware to check admin role
-const requireAdmin = (req: any, res: any, next: any) => {
-  if (req.user.role !== 'ADMIN') {
+const requireAdmin = (req: AuthRequest, res: express.Response, next: express.NextFunction) => {
+  if (req.user?.role !== 'ADMIN') {
     return res.status(403).json({ error: 'Admin access required' });
   }
   next();
 };
 
 // Get all users (admin only)
-router.get('/', auth, requireAdmin, async (req, res) => {
+router.get('/', auth, requireAdmin, async (req: AuthRequest, res) => {
   try {
     const users = await prisma.user.findMany({
       select: {
@@ -58,10 +58,10 @@ router.get('/', auth, requireAdmin, async (req, res) => {
 });
 
 // Get current user info
-router.get('/me', auth, async (req, res) => {
+router.get('/me', auth, async (req: AuthRequest, res) => {
   try {
     const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
+      where: { id: req.user!.id },
       select: {
         id: true,
         username: true,
@@ -85,7 +85,7 @@ router.get('/me', auth, async (req, res) => {
 });
 
 // Create new user (admin only)
-router.post('/', auth, requireAdmin, async (req, res) => {
+router.post('/', auth, requireAdmin, async (req: AuthRequest, res) => {
   try {
     const validatedData = createUserSchema.parse(req.body);
 
@@ -138,7 +138,7 @@ router.post('/', auth, requireAdmin, async (req, res) => {
 });
 
 // Update user (admin only)
-router.put('/:id', auth, requireAdmin, async (req, res) => {
+router.put('/:id', auth, requireAdmin, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const validatedData = updateUserSchema.parse(req.body);
@@ -199,13 +199,13 @@ router.put('/:id', auth, requireAdmin, async (req, res) => {
 });
 
 // Toggle user active status (admin only)
-router.patch('/:id/status', auth, requireAdmin, async (req, res) => {
+router.patch('/:id/status', auth, requireAdmin, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const { isActive } = req.body;
 
     // Prevent admin from deactivating themselves
-    if (id === req.user.id && !isActive) {
+    if (id === req.user!.id && !isActive) {
       return res.status(400).json({ error: 'You cannot deactivate your own account' });
     }
 
@@ -242,12 +242,12 @@ router.patch('/:id/status', auth, requireAdmin, async (req, res) => {
 });
 
 // Delete user (admin only)
-router.delete('/:id', auth, requireAdmin, async (req, res) => {
+router.delete('/:id', auth, requireAdmin, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
 
     // Prevent admin from deleting themselves
-    if (id === req.user.id) {
+    if (id === req.user!.id) {
       return res.status(400).json({ error: 'You cannot delete your own account' });
     }
 

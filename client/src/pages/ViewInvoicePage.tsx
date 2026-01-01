@@ -230,114 +230,109 @@ export default function ViewInvoicePage() {
       </div>
 
       {/* Invoice Display */}
-      <div className="card p-8 invoice-print-area">
-        <div className="max-w-4xl mx-auto invoice-content">
-          {/* KSA Invoice Format */}
-          <div className="space-y-8">
-            {/* Header */}
-            <div className="flex justify-between items-start">
-              <div>
-                <h1 className="text-xl font-bold">SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY</h1>
-                <p className="text-lg">شركة صالح عبدالله المالكي للمقاولات العامة</p>
-                <p className="text-sm mt-2">VAT: 312886534600003</p>
-                <p className="text-sm">Email: tawaffallah@gmail.com</p>
-              </div>
-              <div className="text-right">
-                <h2 className="text-xl font-bold">Tax Invoice</h2>
-                <p className="text-lg">فاتورة ضريبية</p>
-              </div>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="flex justify-between items-start mb-8">
+            <div className="company-info">
+              <h1 className="text-xl font-bold mb-1">SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY</h1>
+              <div className="text-lg mb-3">شركة صالح عبدالله المالكي للمقاولات العامة</div>
+              <p className="text-sm mb-1"><strong>VAT:</strong> 312886534600003</p>
+              <p className="text-sm"><strong>Email:</strong> tawaffallah@gmail.com</p>
             </div>
+            <div className="text-right">
+              <h2 className="text-xl font-bold mb-1">Tax Invoice</h2>
+              <div className="text-lg">فاتورة ضريبية</div>
+            </div>
+          </div>
 
-            {/* Invoice Details */}
-            <div className="grid grid-cols-2 gap-8 mb-8">
-              <div>
-                <h3 className="font-bold mb-2">Bill To:</h3>
-                <p><strong>Name:</strong> {invoice.customerName}</p>
-                <p><strong>Address:</strong> {invoice.customerAddress}</p>
-                <p><strong>City:</strong> {invoice.customerCity}</p>
-                {invoice.customerVat && <p><strong>VAT:</strong> {invoice.customerVat}</p>}
+          {/* Invoice Details */}
+          <div className="flex justify-between mb-8">
+            <div className="flex-1 max-w-md">
+              <h3 className="font-bold mb-3">Bill To:</h3>
+              <p className="mb-1"><strong>Name:</strong> {invoice.customerName}</p>
+              <p className="mb-1"><strong>Address:</strong> {invoice.customerAddress}</p>
+              <p className="mb-1"><strong>City:</strong> {invoice.customerCity}</p>
+              {invoice.customerVat && <p className="mb-1"><strong>VAT:</strong> {invoice.customerVat}</p>}
+            </div>
+            <div className="text-right flex flex-col items-end">
+              <div className="mb-4">
+                <p className="mb-1"><strong>Invoice #:</strong> {invoice.invoiceNumber}</p>
+                <p className="mb-1"><strong>Invoice Date:</strong> {new Date(invoice.issueDate).toLocaleDateString()}</p>
+                <p className="mb-1"><strong>Due Date:</strong> {new Date(invoice.dueDate).toLocaleDateString()}</p>
               </div>
-              <div className="text-right">
-                <div className="space-y-2">
-                  <p><strong>Invoice #:</strong> {invoice.invoiceNumber}</p>
-                  <p><strong>Invoice Date:</strong> {new Date(invoice.issueDate).toLocaleDateString()}</p>
-                  <p><strong>Due Date:</strong> {new Date(invoice.dueDate).toLocaleDateString()}</p>
+              
+              {/* QR Code */}
+              {invoice.qrCode && (
+                <div className="mt-4">
+                  <img 
+                    src={invoice.qrCode} 
+                    alt="ZATCA QR Code" 
+                    className="w-36 h-36 border border-gray-300"
+                  />
                 </div>
-                
-                {/* QR Code - positioned under due date */}
-                {invoice.qrCode && (
-                  <div className="mt-4">
-                    <img 
-                      src={invoice.qrCode} 
-                      alt="ZATCA QR Code" 
-                      className="w-36 h-36 border ml-auto"
-                    />
-                  </div>
-                )}
+              )}
+            </div>
+          </div>
+
+          {/* Items Table */}
+          <div className="mb-6">
+            <table className="w-full border-collapse border border-black">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border border-black p-2 text-center font-bold">#</th>
+                  <th className="border border-black p-2 text-center font-bold">Description</th>
+                  <th className="border border-black p-2 text-center font-bold">Qty</th>
+                  <th className="border border-black p-2 text-center font-bold">Rate</th>
+                  <th className="border border-black p-2 text-center font-bold">Taxable Amount</th>
+                  <th className="border border-black p-2 text-center font-bold">Tax (SAR)</th>
+                  <th className="border border-black p-2 text-center font-bold">Net Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {invoice.items.map((item: any, index: number) => (
+                  <tr key={index}>
+                    <td className="border border-black p-2 text-center">{index + 1}</td>
+                    <td className="border border-black p-2">{item.description}</td>
+                    <td className="border border-black p-2 text-center">{parseFloat(item.quantity).toFixed(2)}</td>
+                    <td className="border border-black p-2 text-right">{parseFloat(item.unitPrice).toFixed(2)}</td>
+                    <td className="border border-black p-2 text-right">{parseFloat(item.lineTotal).toFixed(2)}</td>
+                    <td className="border border-black p-2 text-right">{parseFloat(item.vatAmount).toFixed(2)}</td>
+                    <td className="border border-black p-2 text-right">{parseFloat(item.totalAmount).toFixed(2)}</td>
+                  </tr>
+                ))}
+                <tr className="bg-gray-50 font-bold">
+                  <td colSpan={4} className="border border-black p-2 text-right">Total</td>
+                  <td className="border border-black p-2 text-right">{parseFloat(invoice.subtotal).toFixed(2)}</td>
+                  <td className="border border-black p-2 text-right">{parseFloat(invoice.vatAmount).toFixed(2)}</td>
+                  <td className="border border-black p-2 text-right">{parseFloat(invoice.totalAmount).toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Total Summary */}
+          <div className="flex justify-end mb-6">
+            <div className="w-80">
+              <div className="flex justify-between py-2 border-t-2 border-black font-bold text-lg">
+                <span>Net Amount:</span>
+                <span>SAR {parseFloat(invoice.totalAmount).toFixed(2)}</span>
               </div>
             </div>
+          </div>
 
-            {/* Items Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse border border-gray-300">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border border-gray-300 p-3 text-center">#</th>
-                    <th className="border border-gray-300 p-3 text-left">Description</th>
-                    <th className="border border-gray-300 p-3 text-center">Qty</th>
-                    <th className="border border-gray-300 p-3 text-right">Rate</th>
-                    <th className="border border-gray-300 p-3 text-right">Taxable Amount</th>
-                    <th className="border border-gray-300 p-3 text-right">Tax (SAR)</th>
-                    <th className="border border-gray-300 p-3 text-right">Net Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoice.items.map((item: any, index: number) => (
-                    <tr key={index}>
-                      <td className="border border-gray-300 p-3 text-center">{index + 1}</td>
-                      <td className="border border-gray-300 p-3">{item.description}</td>
-                      <td className="border border-gray-300 p-3 text-center">{parseFloat(item.quantity).toFixed(2)}</td>
-                      <td className="border border-gray-300 p-3 text-right">{parseFloat(item.unitPrice).toFixed(2)}</td>
-                      <td className="border border-gray-300 p-3 text-right">{parseFloat(item.lineTotal).toFixed(2)}</td>
-                      <td className="border border-gray-300 p-3 text-right">{parseFloat(item.vatAmount).toFixed(2)}</td>
-                      <td className="border border-gray-300 p-3 text-right">{parseFloat(item.totalAmount).toFixed(2)}</td>
-                    </tr>
-                  ))}
-                  <tr className="bg-gray-50 font-bold">
-                    <td colSpan={4} className="border border-gray-300 p-3 text-right">Total</td>
-                    <td className="border border-gray-300 p-3 text-right">{parseFloat(invoice.subtotal).toFixed(2)}</td>
-                    <td className="border border-gray-300 p-3 text-right">{parseFloat(invoice.vatAmount).toFixed(2)}</td>
-                    <td className="border border-gray-300 p-3 text-right">{parseFloat(invoice.totalAmount).toFixed(2)}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+          {/* Amount in Words */}
+          <div className="mb-6 text-sm">
+            <p><strong>Amount in Words:</strong> {numberToWords(parseFloat(invoice.totalAmount))}</p>
+          </div>
 
-            {/* Total Summary */}
-            <div className="flex justify-end">
-              <div className="w-80 space-y-2">
-                <div className="flex justify-between py-2 border-b">
-                  <span>Net Amount:</span>
-                  <span className="font-bold">SAR {parseFloat(invoice.totalAmount).toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Amount in Words */}
-            <div className="text-sm">
-              <p><strong>Amount in Words:</strong> {numberToWords(parseFloat(invoice.totalAmount))}</p>
-            </div>
-
-            {/* Bank Details */}
-            <div className="text-sm text-gray-600 space-y-1">
-              <p><strong>Bank Details:</strong></p>
-              <p>Account Number: 379000100006865704167</p>
-              <p>IBAN Number: SA6600003790001000068657041</p>
-              <p>Al rajhi Bank مصرف الراجحي للاستثمار</p>
-              <p>SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY</p>
-            </div>
-
-            {/* Footer - Removed "Powered by TopPower.com" */}
+          {/* Bank Details */}
+          <div className="text-sm text-gray-600 space-y-1">
+            <p><strong>Bank Details:</strong></p>
+            <p>Account Number: 379000100006865704167</p>
+            <p>IBAN Number: SA6600003790001000068657041</p>
+            <p>Al rajhi Bank مصرف الراجحي للاستثمار</p>
+            <p>SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY</p>
           </div>
         </div>
       </div>

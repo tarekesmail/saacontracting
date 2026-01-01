@@ -34,6 +34,7 @@ model Tenant {
   expenseCategories ExpenseCategory[]
   expenses         Expense[]
   invoices         Invoice[]
+  credits          Credit[]
 
   @@map("tenants")
 }
@@ -139,6 +140,29 @@ model Expense {
   @@map("expenses")
 }
 
+model Credit {
+  id              String      @id @default(cuid())
+  date            DateTime    @db.Date
+  amount          Decimal     @db.Decimal(10, 2) // Amount in SAR
+  description     String
+  notes           String?     // Optional additional notes
+  reference       String?     // Optional reference number
+  type            CreditType  @default(DEPOSIT)
+  status          CreditStatus @default(PENDING)
+  
+  // Accountant Information
+  accountantName  String
+  accountantPhone String?
+  
+  tenantId        String
+  tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  @@map("credits")
+}
+
 model Invoice {
   id              String   @id @default(cuid())
   invoiceNumber   String   // Sequential invoice number within the month
@@ -209,4 +233,16 @@ enum InvoiceStatus {
 enum UserRole {
   ADMIN
   READ_ONLY
+}
+
+enum CreditType {
+  DEPOSIT      // Money given to accountant
+  WITHDRAWAL   // Money taken back from accountant
+  ADVANCE      // Advance payment to accountant
+}
+
+enum CreditStatus {
+  PENDING      // Transaction recorded but not confirmed
+  CONFIRMED    // Transaction confirmed by accountant
+  CANCELLED    // Transaction cancelled
 }

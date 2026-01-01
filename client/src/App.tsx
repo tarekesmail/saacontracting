@@ -19,6 +19,7 @@ import ViewInvoicePage from './pages/ViewInvoicePage';
 import PrintInvoicePage from './pages/PrintInvoicePage';
 import TenantsPage from './pages/TenantsPage';
 import UsersPage from './pages/UsersPage';
+import CreditsPage from './pages/CreditsPage';
 import PublicLaborerPage from './pages/PublicLaborerPage';
 import LoadingSpinner from './components/LoadingSpinner';
 
@@ -68,6 +69,7 @@ function App() {
           <Route path="/invoices/:id" element={<Layout><ViewInvoicePage /></Layout>} />
           <Route path="/tenants" element={<Layout><TenantsPage /></Layout>} />
           <Route path="/users" element={<Layout><UsersPage /></Layout>} />
+          <Route path="/credits" element={<Layout><CreditsPage /></Layout>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </>
       )}

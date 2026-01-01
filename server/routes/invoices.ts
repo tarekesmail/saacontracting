@@ -128,8 +128,22 @@ router.post('/generate-monthly', async (req: AuthRequest, res, next) => {
       }
     });
 
-    if (timesheets.length === 0) {
-      return res.status(400).json({ error: `No timesheets found for ${month}/${year}` });
+    // Get supplies for the month
+    const supplies = await prisma.supply.findMany({
+      where: {
+        tenantId,
+        date: {
+          gte: startDate,
+          lte: endDate
+        }
+      },
+      include: {
+        category: true
+      }
+    });
+
+    if (timesheets.length === 0 && supplies.length === 0) {
+      return res.status(400).json({ error: `No timesheets or supplies found for ${month}/${year}` });
     }
 
     // Group timesheets by job and calculate totals
@@ -173,28 +187,97 @@ router.post('/generate-monthly', async (req: AuthRequest, res, next) => {
     let subtotal = 0;
     let totalVat = 0;
 
-    const invoiceItems = Object.entries(jobSummary).map(([jobId, summary]) => {
-      const regularAmount = summary.totalHours * summary.orgRate;
-      const overtimeAmount = summary.totalOvertimeHours * summary.orgRate * 1.5; // 1.5x for overtime
-      const lineTotal = regularAmount + overtimeAmount;
-      const vatAmount = lineTotal * 0.15; // 15% VAT
-      const totalAmount = lineTotal + vatAmount;
+    const invoiceItems = [];
 
-      subtotal += lineTotal;
-      totalVat += vatAmount;
+    // Add timesheet items
+    if (timesheets.length > 0) {
+      const timesheetItems = Object.entries(jobSummary).map(([jobId, summary]) => {
+        const regularAmount = summary.totalHours * summary.orgRate;
+        const overtimeAmount = summary.totalOvertimeHours * summary.orgRate * 1.5; // 1.5x for overtime
+        const lineTotal = regularAmount + overtimeAmount;
+        const vatAmount = lineTotal * 0.15; // 15% VAT
+        const totalAmount = lineTotal + vatAmount;
 
-      const description = `${summary.jobName} - ${summary.totalHours}h regular${summary.totalOvertimeHours > 0 ? ` + ${summary.totalOvertimeHours}h overtime` : ''} (${summary.laborers.length} laborers)`;
+        subtotal += lineTotal;
+        totalVat += vatAmount;
 
-      return {
-        description,
-        quantity: summary.totalHours + summary.totalOvertimeHours,
-        unitPrice: summary.orgRate,
-        vatRate: 15,
-        lineTotal,
-        vatAmount,
-        totalAmount
-      };
-    });
+        const description = `${summary.jobName} - ${summary.totalHours}h regular${summary.totalOvertimeHours > 0 ? ` + ${summary.totalOvertimeHours}h overtime` : ''} (${summary.laborers.length} laborers)`;
+
+        return {
+          description,
+          quantity: summary.totalHours + summary.totalOvertimeHours,
+          unitPrice: summary.orgRate,
+          vatRate: 15,
+          lineTotal,
+          vatAmount,
+          totalAmount
+        };
+      });
+
+      invoiceItems.push(...timesheetItems);
+    }
+
+    // Add supply items
+    if (supplies.length > 0) {
+      // Group supplies by category
+      const supplySummary: { [categoryId: string]: { 
+        categoryName: string, 
+        items: Array<{ name: string, quantity: number, price: number, total: number }>,
+        totalValue: number
+      }} = {};
+
+      supplies.forEach(supply => {
+        const categoryId = supply.categoryId;
+        const categoryName = supply.category.name;
+        const price = Number(supply.price);
+        const total = price * supply.quantity;
+
+        if (!supplySummary[categoryId]) {
+          supplySummary[categoryId] = {
+            categoryName,
+            items: [],
+            totalValue: 0
+          };
+        }
+
+        supplySummary[categoryId].items.push({
+          name: supply.name,
+          quantity: supply.quantity,
+          price: price,
+          total: total
+        });
+        supplySummary[categoryId].totalValue += total;
+      });
+
+      // Create invoice items for supplies
+      const supplyItems = Object.entries(supplySummary).map(([, summary]) => {
+        const lineTotal = summary.totalValue;
+        const vatAmount = lineTotal * 0.15; // 15% VAT
+        const totalAmount = lineTotal + vatAmount;
+
+        subtotal += lineTotal;
+        totalVat += vatAmount;
+
+        // Create detailed description
+        const itemsList = summary.items.map(item => 
+          `${item.name} (${item.quantity}x ${item.price.toFixed(2)} SAR)`
+        ).join(', ');
+        
+        const description = `${summary.categoryName} Supplies: ${itemsList}`;
+
+        return {
+          description,
+          quantity: summary.items.reduce((sum, item) => sum + item.quantity, 0),
+          unitPrice: summary.totalValue / summary.items.reduce((sum, item) => sum + item.quantity, 0), // Average price
+          vatRate: 15,
+          lineTotal,
+          vatAmount,
+          totalAmount
+        };
+      });
+
+      invoiceItems.push(...supplyItems);
+    }
 
     const totalAmount = subtotal + totalVat;
 

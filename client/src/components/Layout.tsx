@@ -23,6 +23,7 @@ import {
   DocumentTextIcon,
   UserGroupIcon,
   CreditCardIcon,
+  CubeIcon,
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -43,6 +44,7 @@ const navigation = [
   { name: 'Reports', href: '/reports', icon: DocumentChartBarIcon },
   { name: 'P&L Report', href: '/profit-loss', icon: ChartBarSquareIcon },
   { name: 'Credits', href: '/credits', icon: CreditCardIcon },
+  { name: 'Supplies', href: '/supplies', icon: CubeIcon },
   { name: 'Tenants', href: '/tenants', icon: Cog6ToothIcon },
   { name: 'Users', href: '/users', icon: UserGroupIcon },
 ];

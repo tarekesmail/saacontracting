@@ -35,6 +35,8 @@ model Tenant {
   expenses         Expense[]
   invoices         Invoice[]
   credits          Credit[]
+  supplyCategories SupplyCategory[]
+  supplies         Supply[]
 
   @@map("tenants")
 }
@@ -138,6 +140,44 @@ model Expense {
   updatedAt   DateTime @updatedAt
   
   @@map("expenses")
+}
+
+model SupplyCategory {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  color       String    @default("#6B7280") // Hex color for UI
+  isActive    Boolean   @default(true)
+  
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  supplies    Supply[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@unique([tenantId, name])
+  @@map("supply_categories")
+}
+
+model Supply {
+  id          String   @id @default(cuid())
+  name        String   // Supply name (e.g., "Water Bottles", "Office Supplies")
+  date        DateTime @db.Date
+  price       Decimal  @db.Decimal(10, 2) // Price in SAR
+  quantity    Int      @default(1) // Quantity provided
+  notes       String?  // Optional notes
+  
+  categoryId  String
+  tenantId    String
+  
+  category    SupplyCategory @relation(fields: [categoryId], references: [id])
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("supplies")
 }
 
 model Credit {

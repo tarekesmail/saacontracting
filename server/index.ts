@@ -13,6 +13,8 @@ import { expenseCategoryRoutes } from './routes/expense-categories';
 import { expenseRoutes } from './routes/expenses';
 import { invoiceRoutes } from './routes/invoices';
 import { creditRoutes } from './routes/credits';
+import { supplyCategoryRoutes } from './routes/supply-categories';
+import { supplyRoutes } from './routes/supplies';
 import userRoutes from './routes/users';
 import { errorHandler } from './middleware/errorHandler';
 import { authenticateToken, requireTenant } from './middleware/auth';
@@ -58,6 +60,8 @@ app.use('/api/reports', authenticateToken, requireTenant, reportRoutes);
 app.use('/api/expense-categories', authenticateToken, requireTenant, expenseCategoryRoutes);
 app.use('/api/expenses', authenticateToken, requireTenant, expenseRoutes);
 app.use('/api/credits', authenticateToken, requireTenant, creditRoutes);
+app.use('/api/supply-categories', authenticateToken, requireTenant, supplyCategoryRoutes);
+app.use('/api/supplies', authenticateToken, requireTenant, supplyRoutes);
 app.use('/api/invoices', authenticateToken, requireTenant, invoiceRoutes);
 
 // Favicon route

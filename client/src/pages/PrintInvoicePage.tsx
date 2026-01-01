@@ -278,39 +278,71 @@ export default function PrintInvoicePage() {
       
       <div className="invoice-print-area invoice-container">
         {/* Header */}
-        <div className="header">
-          <div className="company-info">
-            <h1>SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY</h1>
-            <div className="arabic">شركة صالح عبدالله المالكي للمقاولات العامة</div>
-            <p><strong>VAT:</strong> 312886534600003</p>
-            <p><strong>Email:</strong> tawaffallah@gmail.com</p>
+        <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '30px' }}>
+          <div className="company-info" style={{ flex: 1 }}>
+            <h1 style={{ fontSize: '18pt', fontWeight: 'bold', margin: '0 0 5px 0', fontFamily: 'Arial, sans-serif' }}>
+              SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY
+            </h1>
+            <div className="arabic" style={{ fontSize: '16pt', margin: '0 0 10px 0', fontFamily: 'Arial, sans-serif', direction: 'rtl', textAlign: 'right' }}>
+              شركة صالح عبدالله المالكي للمقاولات العامة
+            </div>
+            <p style={{ fontSize: '10pt', margin: '2px 0', fontFamily: 'Arial, sans-serif' }}>
+              <strong>VAT:</strong> 312886534600003
+            </p>
+            <p style={{ fontSize: '10pt', margin: '2px 0', fontFamily: 'Arial, sans-serif' }}>
+              <strong>Email:</strong> tawaffallah@gmail.com
+            </p>
           </div>
-          <div className="invoice-title">
-            <h2>Tax Invoice</h2>
-            <div className="arabic">فاتورة ضريبية</div>
+          <div className="invoice-title" style={{ textAlign: 'right', flex: 1 }}>
+            <h2 style={{ fontSize: '18pt', fontWeight: 'bold', margin: '0 0 5px 0', fontFamily: 'Arial, sans-serif' }}>
+              Tax Invoice
+            </h2>
+            <div className="arabic" style={{ fontSize: '16pt', fontFamily: 'Arial, sans-serif', direction: 'rtl', textAlign: 'right' }}>
+              فاتورة ضريبية
+            </div>
           </div>
         </div>
 
         {/* Invoice Details */}
-        <div className="invoice-details">
-          <div className="bill-to">
-            <h3>Bill To:</h3>
-            <p><strong>Name:</strong> {invoice.customerName}</p>
-            <p><strong>Address:</strong> {invoice.customerAddress}</p>
-            <p><strong>City:</strong> {invoice.customerCity}</p>
-            {invoice.customerVat && <p><strong>VAT:</strong> {invoice.customerVat}</p>}
+        <div className="invoice-details" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
+          <div className="bill-to" style={{ flex: 1, maxWidth: '50%' }}>
+            <h3 style={{ fontWeight: 'bold', marginBottom: '10px', fontFamily: 'Arial, sans-serif' }}>Bill To:</h3>
+            <p style={{ margin: '3px 0', fontFamily: 'Arial, sans-serif' }}>
+              <strong>Name:</strong> {invoice.customerName}
+            </p>
+            <p style={{ margin: '3px 0', fontFamily: 'Arial, sans-serif' }}>
+              <strong>Address:</strong> {invoice.customerAddress}
+            </p>
+            <p style={{ margin: '3px 0', fontFamily: 'Arial, sans-serif' }}>
+              <strong>City:</strong> {invoice.customerCity}
+            </p>
+            {invoice.customerVat && (
+              <p style={{ margin: '3px 0', fontFamily: 'Arial, sans-serif' }}>
+                <strong>VAT:</strong> {invoice.customerVat}
+              </p>
+            )}
           </div>
-          <div className="invoice-meta">
-            <div>
-              <p><strong>Invoice #:</strong> {invoice.invoiceNumber}</p>
-              <p><strong>Invoice Date:</strong> {new Date(invoice.issueDate).toLocaleDateString()}</p>
-              <p><strong>Due Date:</strong> {new Date(invoice.dueDate).toLocaleDateString()}</p>
+          <div className="invoice-meta" style={{ textAlign: 'right', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+            <div style={{ marginBottom: '15px' }}>
+              <p style={{ margin: '3px 0', fontFamily: 'Arial, sans-serif' }}>
+                <strong>Invoice #:</strong> {invoice.invoiceNumber}
+              </p>
+              <p style={{ margin: '3px 0', fontFamily: 'Arial, sans-serif' }}>
+                <strong>Invoice Date:</strong> {new Date(invoice.issueDate).toLocaleDateString()}
+              </p>
+              <p style={{ margin: '3px 0', fontFamily: 'Arial, sans-serif' }}>
+                <strong>Due Date:</strong> {new Date(invoice.dueDate).toLocaleDateString()}
+              </p>
             </div>
             
             {/* QR Code - positioned under due date */}
             {invoice.qrCode && (
-              <div className="qr-code">
-                <img src={invoice.qrCode} alt="ZATCA QR Code" />
+              <div className="qr-code" style={{ marginTop: '15px', textAlign: 'right' }}>
+                <img 
+                  src={invoice.qrCode} 
+                  alt="ZATCA QR Code" 
+                  style={{ width: '150px', height: '150px', border: '1px solid #ccc' }}
+                />
               </div>
             )}
           </div>

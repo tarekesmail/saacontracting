@@ -16,20 +16,17 @@
     font-family: Arial, sans-serif !important;
   }
   
-  /* Hide UI elements */
+  /* Hide specific UI elements - be more specific to avoid hiding invoice content */
   .print-button,
-  nav,
-  header,
+  .no-print,
+  .btn:not(.invoice-print-area .btn),
+  .button:not(.invoice-print-area .button),
+  nav:not(.invoice-print-area nav),
+  header:not(.invoice-print-area header),
   .sidebar,
   .footer,
-  .btn,
-  .button,
-  .no-print,
-  [class*="btn"],
-  [class*="nav"],
-  [class*="header"],
   [class*="sidebar"],
-  [class*="menu"],
+  [class*="menu"]:not(.invoice-print-area [class*="menu"]),
   [class*="toolbar"] {
     display: none !important;
   }
@@ -41,7 +38,8 @@
   }
   
   /* Invoice content styling */
-  .invoice-print-area {
+  .invoice-print-area,
+  .invoice-container {
     width: 100% !important;
     max-width: none !important;
     margin: 0 !important;
@@ -51,72 +49,110 @@
     font-size: 11pt !important;
     line-height: 1.3 !important;
     color: black !important;
+    display: block !important;
+    visibility: visible !important;
   }
   
-  /* Ensure proper font rendering */
-  .invoice-print-area * {
+  /* Ensure all invoice content is visible */
+  .invoice-print-area *,
+  .invoice-container * {
+    display: block !important;
+    visibility: visible !important;
     font-family: Arial, sans-serif !important;
     -webkit-font-smoothing: antialiased !important;
     -moz-osx-font-smoothing: grayscale !important;
   }
   
-  .invoice-print-area h1 {
+  /* Header styling */
+  .invoice-print-area .header,
+  .invoice-container .header,
+  .company-info,
+  .invoice-title {
+    display: flex !important;
+    visibility: visible !important;
+  }
+  
+  .invoice-print-area h1,
+  .invoice-container h1 {
     font-size: 16pt !important;
-    margin: 0 0 10px 0 !important;
+    margin: 0 0 5px 0 !important;
     font-weight: bold !important;
     font-family: Arial, sans-serif !important;
+    display: block !important;
+    visibility: visible !important;
   }
   
-  .invoice-print-area h2 {
+  .invoice-print-area h2,
+  .invoice-container h2 {
     font-size: 14pt !important;
-    margin: 0 0 8px 0 !important;
+    margin: 0 0 5px 0 !important;
     font-weight: bold !important;
     font-family: Arial, sans-serif !important;
+    display: block !important;
+    visibility: visible !important;
   }
   
-  .invoice-print-area h3 {
+  .invoice-print-area h3,
+  .invoice-container h3 {
     font-size: 12pt !important;
     margin: 0 0 6px 0 !important;
     font-weight: bold !important;
     font-family: Arial, sans-serif !important;
+    display: block !important;
+    visibility: visible !important;
   }
   
-  .invoice-print-area p {
+  .invoice-print-area p,
+  .invoice-container p {
     margin: 2px 0 !important;
     font-family: Arial, sans-serif !important;
+    display: block !important;
+    visibility: visible !important;
   }
   
   /* Arabic text styling */
-  .invoice-print-area .arabic {
+  .invoice-print-area .arabic,
+  .invoice-container .arabic {
     font-family: Arial, sans-serif !important;
     direction: rtl !important;
     text-align: right !important;
+    display: block !important;
+    visibility: visible !important;
   }
   
   /* Table styles for print */
-  .invoice-print-area table {
+  .invoice-print-area table,
+  .invoice-container table {
     border-collapse: collapse !important;
     width: 100% !important;
     margin: 10px 0 !important;
     font-family: Arial, sans-serif !important;
+    display: table !important;
+    visibility: visible !important;
   }
   
   .invoice-print-area th,
-  .invoice-print-area td {
+  .invoice-print-area td,
+  .invoice-container th,
+  .invoice-container td {
     border: 1px solid #000 !important;
     padding: 6px !important;
     text-align: left !important;
     font-size: 10pt !important;
     font-family: Arial, sans-serif !important;
+    display: table-cell !important;
+    visibility: visible !important;
   }
   
-  .invoice-print-area th {
+  .invoice-print-area th,
+  .invoice-container th {
     background-color: #f0f0f0 !important;
     font-weight: bold !important;
   }
   
   /* Remove styling that interferes with print */
-  .invoice-print-area * {
+  .invoice-print-area *,
+  .invoice-container * {
     box-shadow: none !important;
     border-radius: 0 !important;
     text-shadow: none !important;
@@ -124,10 +160,21 @@
   }
   
   /* QR code styling */
-  .invoice-print-area .qr-code img {
+  .invoice-print-area .qr-code img,
+  .invoice-container .qr-code img {
     width: 150px !important;
     height: 150px !important;
     display: block !important;
+    visibility: visible !important;
+  }
+  
+  /* Flex layouts for print */
+  .invoice-print-area .flex,
+  .invoice-print-area .invoice-details,
+  .invoice-container .flex,
+  .invoice-container .invoice-details {
+    display: flex !important;
+    visibility: visible !important;
   }
 }
 

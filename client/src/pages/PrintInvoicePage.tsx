@@ -40,166 +40,228 @@ export default function PrintInvoicePage() {
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
-      body {
-        font-family: Arial, sans-serif;
-        font-size: 11pt;
-        line-height: 1.4;
-        color: black;
-        background: white;
-        padding: 20px;
-        margin: 0;
-      }
-      
-      .invoice-container {
-        max-width: 800px;
-        margin: 0 auto;
-        background: white;
-      }
-      
-      .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 30px;
-      }
-      
-      .company-info h1 {
-        font-size: 18pt;
-        font-weight: bold;
-        margin-bottom: 5px;
-      }
-      
-      .company-info .arabic {
-        font-size: 16pt;
-        margin-bottom: 10px;
-      }
-      
-      .company-info p {
-        font-size: 10pt;
-        margin: 2px 0;
-      }
-      
-      .invoice-title {
-        text-align: right;
-      }
-      
-      .invoice-title h2 {
-        font-size: 18pt;
-        font-weight: bold;
-        margin-bottom: 5px;
-      }
-      
-      .invoice-title .arabic {
-        font-size: 16pt;
-      }
-      
-      .invoice-details {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 30px;
-      }
-      
-      .bill-to {
-        flex: 1;
-        max-width: 50%;
-      }
-      
-      .bill-to h3 {
-        font-weight: bold;
-        margin-bottom: 10px;
-      }
-      
-      .bill-to p {
-        margin: 3px 0;
-      }
-      
-      .invoice-meta {
-        text-align: right;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-      }
-      
-      .invoice-meta p {
-        margin: 3px 0;
-      }
-      
-      .qr-code {
-        margin-top: 15px;
-        text-align: right;
-      }
-      
-      .qr-code img {
-        width: 150px;
-        height: 150px;
-        border: 1px solid #ccc;
-      }
-      
-      .items-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 20px 0;
-      }
-      
-      .items-table th,
-      .items-table td {
-        border: 1px solid #000;
-        padding: 8px;
-        text-align: left;
-        font-size: 10pt;
-      }
-      
-      .items-table th {
-        background-color: #f0f0f0;
-        font-weight: bold;
-        text-align: center;
-      }
-      
-      .items-table .text-center {
-        text-align: center;
-      }
-      
-      .items-table .text-right {
-        text-align: right;
-      }
-      
-      .total-row {
-        background-color: #f8f8f8;
-        font-weight: bold;
-      }
-      
-      .summary {
-        display: flex;
-        justify-content: flex-end;
-        margin: 20px 0;
-      }
-      
-      .summary-box {
-        width: 300px;
-      }
-      
-      .summary-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 5px 0;
-        border-bottom: 1px solid #eee;
-      }
-      
-      .summary-row.total {
-        border-top: 2px solid #000;
-        font-weight: bold;
-        font-size: 12pt;
-      }
-      
-      .bank-details {
-        margin-top: 30px;
-        font-size: 10pt;
-        color: #666;
-      }
-      
-      .bank-details p {
-        margin: 2px 0;
+      @media print {
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
+        body {
+          font-family: Arial, sans-serif !important;
+          font-size: 11pt !important;
+          line-height: 1.4 !important;
+          color: black !important;
+          background: white !important;
+          padding: 20px !important;
+          margin: 0 !important;
+        }
+        
+        .invoice-container {
+          max-width: 100% !important;
+          margin: 0 auto !important;
+          background: white !important;
+          padding: 0 !important;
+        }
+        
+        .header {
+          display: table !important;
+          width: 100% !important;
+          margin-bottom: 30px !important;
+        }
+        
+        .company-info {
+          display: table-cell !important;
+          width: 60% !important;
+          vertical-align: top !important;
+        }
+        
+        .company-info h1 {
+          font-size: 16pt !important;
+          font-weight: bold !important;
+          margin: 0 0 5px 0 !important;
+          font-family: Arial, sans-serif !important;
+          line-height: 1.2 !important;
+        }
+        
+        .company-info .arabic {
+          font-size: 14pt !important;
+          margin: 0 0 10px 0 !important;
+          font-family: Arial, sans-serif !important;
+          direction: rtl !important;
+          text-align: right !important;
+          line-height: 1.2 !important;
+        }
+        
+        .company-info p {
+          font-size: 10pt !important;
+          margin: 2px 0 !important;
+          font-family: Arial, sans-serif !important;
+        }
+        
+        .invoice-title {
+          display: table-cell !important;
+          width: 40% !important;
+          text-align: right !important;
+          vertical-align: top !important;
+        }
+        
+        .invoice-title h2 {
+          font-size: 16pt !important;
+          font-weight: bold !important;
+          margin: 0 0 5px 0 !important;
+          font-family: Arial, sans-serif !important;
+        }
+        
+        .invoice-title .arabic {
+          font-size: 14pt !important;
+          font-family: Arial, sans-serif !important;
+          direction: rtl !important;
+          text-align: right !important;
+        }
+        
+        .invoice-details {
+          display: table !important;
+          width: 100% !important;
+          margin-bottom: 30px !important;
+        }
+        
+        .bill-to {
+          display: table-cell !important;
+          width: 50% !important;
+          vertical-align: top !important;
+          padding-right: 20px !important;
+        }
+        
+        .bill-to h3 {
+          font-weight: bold !important;
+          margin-bottom: 10px !important;
+          font-family: Arial, sans-serif !important;
+          font-size: 11pt !important;
+        }
+        
+        .bill-to p {
+          margin: 3px 0 !important;
+          font-family: Arial, sans-serif !important;
+          font-size: 10pt !important;
+        }
+        
+        .invoice-meta {
+          display: table-cell !important;
+          width: 50% !important;
+          text-align: right !important;
+          vertical-align: top !important;
+        }
+        
+        .invoice-meta p {
+          margin: 3px 0 !important;
+          font-family: Arial, sans-serif !important;
+          font-size: 10pt !important;
+        }
+        
+        .qr-code {
+          margin-top: 15px !important;
+          text-align: right !important;
+        }
+        
+        .qr-code img {
+          width: 120px !important;
+          height: 120px !important;
+          border: 1px solid #ccc !important;
+        }
+        
+        .items-table {
+          width: 100% !important;
+          border-collapse: collapse !important;
+          margin: 20px 0 !important;
+        }
+        
+        .items-table th,
+        .items-table td {
+          border: 1px solid #000 !important;
+          padding: 6px !important;
+          text-align: left !important;
+          font-size: 9pt !important;
+          font-family: Arial, sans-serif !important;
+        }
+        
+        .items-table th {
+          background-color: #f0f0f0 !important;
+          font-weight: bold !important;
+          text-align: center !important;
+        }
+        
+        .items-table .text-center {
+          text-align: center !important;
+        }
+        
+        .items-table .text-right {
+          text-align: right !important;
+        }
+        
+        .total-row {
+          background-color: #f8f8f8 !important;
+          font-weight: bold !important;
+        }
+        
+        .summary {
+          width: 100% !important;
+          text-align: right !important;
+          margin: 20px 0 !important;
+        }
+        
+        .summary-box {
+          display: inline-block !important;
+          width: 300px !important;
+        }
+        
+        .summary-row {
+          display: table !important;
+          width: 100% !important;
+          padding: 5px 0 !important;
+          border-bottom: 1px solid #eee !important;
+        }
+        
+        .summary-row.total {
+          border-top: 2px solid #000 !important;
+          font-weight: bold !important;
+          font-size: 12pt !important;
+        }
+        
+        .summary-row span:first-child {
+          display: table-cell !important;
+          text-align: left !important;
+        }
+        
+        .summary-row span:last-child {
+          display: table-cell !important;
+          text-align: right !important;
+        }
+        
+        .amount-words {
+          margin: 20px 0 !important;
+          font-size: 10pt !important;
+          font-family: Arial, sans-serif !important;
+        }
+        
+        .bank-details {
+          margin-top: 30px !important;
+          font-size: 9pt !important;
+          color: #666 !important;
+        }
+        
+        .bank-details p {
+          margin: 2px 0 !important;
+          font-family: Arial, sans-serif !important;
+        }
+        
+        .print-button {
+          display: none !important;
+        }
+        
+        @page {
+          margin: 0.5in !important;
+          size: A4 !important;
+        }
       }
       
       .print-button {
@@ -278,71 +340,39 @@ export default function PrintInvoicePage() {
       
       <div className="invoice-print-area invoice-container">
         {/* Header */}
-        <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '30px' }}>
-          <div className="company-info" style={{ flex: 1 }}>
-            <h1 style={{ fontSize: '18pt', fontWeight: 'bold', margin: '0 0 5px 0', fontFamily: 'Arial, sans-serif' }}>
-              SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY
-            </h1>
-            <div className="arabic" style={{ fontSize: '16pt', margin: '0 0 10px 0', fontFamily: 'Arial, sans-serif', direction: 'rtl', textAlign: 'right' }}>
-              شركة صالح عبدالله المالكي للمقاولات العامة
-            </div>
-            <p style={{ fontSize: '10pt', margin: '2px 0', fontFamily: 'Arial, sans-serif' }}>
-              <strong>VAT:</strong> 312886534600003
-            </p>
-            <p style={{ fontSize: '10pt', margin: '2px 0', fontFamily: 'Arial, sans-serif' }}>
-              <strong>Email:</strong> tawaffallah@gmail.com
-            </p>
+        <div className="header">
+          <div className="company-info">
+            <h1>SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY</h1>
+            <div className="arabic">شركة صالح عبدالله المالكي للمقاولات العامة</div>
+            <p><strong>VAT:</strong> 312886534600003</p>
+            <p><strong>Email:</strong> tawaffallah@gmail.com</p>
           </div>
-          <div className="invoice-title" style={{ textAlign: 'right', flex: 1 }}>
-            <h2 style={{ fontSize: '18pt', fontWeight: 'bold', margin: '0 0 5px 0', fontFamily: 'Arial, sans-serif' }}>
-              Tax Invoice
-            </h2>
-            <div className="arabic" style={{ fontSize: '16pt', fontFamily: 'Arial, sans-serif', direction: 'rtl', textAlign: 'right' }}>
-              فاتورة ضريبية
-            </div>
+          <div className="invoice-title">
+            <h2>Tax Invoice</h2>
+            <div className="arabic">فاتورة ضريبية</div>
           </div>
         </div>
 
         {/* Invoice Details */}
-        <div className="invoice-details" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
-          <div className="bill-to" style={{ flex: 1, maxWidth: '50%' }}>
-            <h3 style={{ fontWeight: 'bold', marginBottom: '10px', fontFamily: 'Arial, sans-serif' }}>Bill To:</h3>
-            <p style={{ margin: '3px 0', fontFamily: 'Arial, sans-serif' }}>
-              <strong>Name:</strong> {invoice.customerName}
-            </p>
-            <p style={{ margin: '3px 0', fontFamily: 'Arial, sans-serif' }}>
-              <strong>Address:</strong> {invoice.customerAddress}
-            </p>
-            <p style={{ margin: '3px 0', fontFamily: 'Arial, sans-serif' }}>
-              <strong>City:</strong> {invoice.customerCity}
-            </p>
-            {invoice.customerVat && (
-              <p style={{ margin: '3px 0', fontFamily: 'Arial, sans-serif' }}>
-                <strong>VAT:</strong> {invoice.customerVat}
-              </p>
-            )}
+        <div className="invoice-details">
+          <div className="bill-to">
+            <h3>Bill To:</h3>
+            <p><strong>Name:</strong> {invoice.customerName}</p>
+            <p><strong>Address:</strong> {invoice.customerAddress}</p>
+            <p><strong>City:</strong> {invoice.customerCity}</p>
+            {invoice.customerVat && <p><strong>VAT:</strong> {invoice.customerVat}</p>}
           </div>
-          <div className="invoice-meta" style={{ textAlign: 'right', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-            <div style={{ marginBottom: '15px' }}>
-              <p style={{ margin: '3px 0', fontFamily: 'Arial, sans-serif' }}>
-                <strong>Invoice #:</strong> {invoice.invoiceNumber}
-              </p>
-              <p style={{ margin: '3px 0', fontFamily: 'Arial, sans-serif' }}>
-                <strong>Invoice Date:</strong> {new Date(invoice.issueDate).toLocaleDateString()}
-              </p>
-              <p style={{ margin: '3px 0', fontFamily: 'Arial, sans-serif' }}>
-                <strong>Due Date:</strong> {new Date(invoice.dueDate).toLocaleDateString()}
-              </p>
+          <div className="invoice-meta">
+            <div>
+              <p><strong>Invoice #:</strong> {invoice.invoiceNumber}</p>
+              <p><strong>Invoice Date:</strong> {new Date(invoice.issueDate).toLocaleDateString()}</p>
+              <p><strong>Due Date:</strong> {new Date(invoice.dueDate).toLocaleDateString()}</p>
             </div>
             
-            {/* QR Code - positioned under due date */}
+            {/* QR Code */}
             {invoice.qrCode && (
-              <div className="qr-code" style={{ marginTop: '15px', textAlign: 'right' }}>
-                <img 
-                  src={invoice.qrCode} 
-                  alt="ZATCA QR Code" 
-                  style={{ width: '150px', height: '150px', border: '1px solid #ccc' }}
-                />
+              <div className="qr-code">
+                <img src={invoice.qrCode} alt="ZATCA QR Code" />
               </div>
             )}
           </div>
@@ -393,7 +423,7 @@ export default function PrintInvoicePage() {
         </div>
 
         {/* Amount in Words */}
-        <div style={{ margin: '20px 0', fontSize: '10pt' }}>
+        <div className="amount-words">
           <p><strong>Amount in Words:</strong> {numberToWords(parseFloat(invoice.totalAmount))}</p>
         </div>
 

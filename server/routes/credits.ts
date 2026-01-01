@@ -14,7 +14,7 @@ const creditSchema = z.object({
   reference: z.string().optional(),
   type: z.enum(['DEPOSIT', 'WITHDRAWAL', 'ADVANCE']),
   status: z.enum(['PENDING', 'CONFIRMED', 'CANCELLED']).optional(),
-  accountantName: z.string().min(1, 'Accountant name is required'),
+  accountantName: z.string().optional(),
   accountantPhone: z.string().optional()
 });
 
@@ -94,7 +94,8 @@ router.post('/', async (req: AuthRequest, res, next) => {
       data: {
         ...data,
         date: new Date(data.date),
-        status: data.status || 'PENDING',
+        status: data.status || 'CONFIRMED', // Default to CONFIRMED
+        accountantName: data.accountantName || 'Company Accountant', // Default name
         tenantId: req.user!.tenantId!
       }
     });

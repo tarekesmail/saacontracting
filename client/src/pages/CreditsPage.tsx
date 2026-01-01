@@ -43,11 +43,7 @@ export default function CreditsPage() {
     amount: '',
     description: '',
     notes: '',
-    reference: '',
     type: 'DEPOSIT' as const,
-    status: 'PENDING' as const,
-    accountantName: '',
-    accountantPhone: ''
   });
   const [filters, setFilters] = useState({
     startDate: '',
@@ -93,7 +89,12 @@ export default function CreditsPage() {
     try {
       const data = {
         ...formData,
-        amount: parseFloat(formData.amount)
+        amount: parseFloat(formData.amount),
+        // Set default values for removed fields
+        reference: '',
+        status: 'CONFIRMED' as const,
+        accountantName: 'Company Accountant',
+        accountantPhone: ''
       };
 
       if (editingCredit) {
@@ -120,11 +121,7 @@ export default function CreditsPage() {
       amount: credit.amount.toString(),
       description: credit.description,
       notes: credit.notes || '',
-      reference: credit.reference || '',
       type: credit.type,
-      status: credit.status,
-      accountantName: credit.accountantName,
-      accountantPhone: credit.accountantPhone || ''
     });
     setShowForm(true);
   };
@@ -159,11 +156,7 @@ export default function CreditsPage() {
       amount: '',
       description: '',
       notes: '',
-      reference: '',
       type: 'DEPOSIT',
-      status: 'PENDING',
-      accountantName: '',
-      accountantPhone: ''
     });
     setEditingCredit(null);
     setShowForm(false);
@@ -434,31 +427,6 @@ export default function CreditsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Accountant Name *
-                </label>
-                <input
-                  type="text"
-                  value={formData.accountantName}
-                  onChange={(e) => setFormData({ ...formData, accountantName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Accountant Phone
-                </label>
-                <input
-                  type="tel"
-                  value={formData.accountantPhone}
-                  onChange={(e) => setFormData({ ...formData, accountantPhone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Description *
                 </label>
                 <input
@@ -468,34 +436,6 @@ export default function CreditsPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   required
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Reference Number
-                </label>
-                <input
-                  type="text"
-                  value={formData.reference}
-                  onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Receipt or reference number"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status
-                </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="PENDING">Pending</option>
-                  <option value="CONFIRMED">Confirmed</option>
-                  <option value="CANCELLED">Cancelled</option>
-                </select>
               </div>
 
               <div>
@@ -652,15 +592,6 @@ export default function CreditsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
-                        {canEdit && credit.status === 'PENDING' && (
-                          <button
-                            onClick={() => handleStatusChange(credit, 'CONFIRMED')}
-                            className="text-green-600 hover:text-green-900"
-                            title="Confirm transaction"
-                          >
-                            <CheckCircleIcon className="h-4 w-4" />
-                          </button>
-                        )}
                         {canEdit && (
                           <button
                             onClick={() => handleEdit(credit)}

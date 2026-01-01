@@ -151,7 +151,7 @@ model Credit {
   status          CreditStatus @default(PENDING)
   
   // Accountant Information
-  accountantName  String
+  accountantName  String?
   accountantPhone String?
   
   tenantId        String

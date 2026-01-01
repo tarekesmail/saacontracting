@@ -24,7 +24,7 @@ interface ExpenseCategory {
 interface Expense {
   id: string;
   date: string;
-  amount: number;
+  amount: number; // Ensure this is always a number
   description: string;
   notes?: string;
   receipt?: string;

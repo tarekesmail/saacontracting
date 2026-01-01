@@ -43,7 +43,13 @@ router.get('/', async (req: AuthRequest, res, next) => {
       orderBy: { date: 'desc' }
     });
 
-    res.json(expenses);
+    // Convert Decimal amounts to numbers for proper JSON serialization
+    const expensesWithNumbers = expenses.map(expense => ({
+      ...expense,
+      amount: Number(expense.amount)
+    }));
+
+    res.json(expensesWithNumbers);
   } catch (error) {
     next(error);
   }
@@ -66,7 +72,13 @@ router.get('/:id', async (req: AuthRequest, res, next) => {
       return res.status(404).json({ error: 'Expense not found' });
     }
 
-    res.json(expense);
+    // Convert Decimal amount to number
+    const expenseWithNumber = {
+      ...expense,
+      amount: Number(expense.amount)
+    };
+
+    res.json(expenseWithNumber);
   } catch (error) {
     next(error);
   }
@@ -101,7 +113,13 @@ router.post('/', async (req: AuthRequest, res, next) => {
       }
     });
 
-    res.status(201).json(expense);
+    // Convert Decimal amount to number
+    const expenseWithNumber = {
+      ...expense,
+      amount: Number(expense.amount)
+    };
+
+    res.status(201).json(expenseWithNumber);
   } catch (error) {
     next(error);
   }
@@ -150,7 +168,13 @@ router.put('/:id', async (req: AuthRequest, res, next) => {
       }
     });
 
-    res.json(updatedExpense);
+    // Convert Decimal amount to number
+    const expenseWithNumber = updatedExpense ? {
+      ...updatedExpense,
+      amount: Number(updatedExpense.amount)
+    } : null;
+
+    res.json(expenseWithNumber);
   } catch (error) {
     next(error);
   }

@@ -1,12 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { numberToWords } from '../utils/numberToWords';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 export default function PrintInvoicePage() {
   const { id } = useParams<{ id: string }>();
   const [invoice, setInvoice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const invoiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchInvoice = async () => {
@@ -30,23 +34,41 @@ export default function PrintInvoicePage() {
   };
 
   const handleDownloadPDF = async () => {
+    if (!invoiceRef.current) return;
+    
+    setGenerating(true);
+    
     try {
-      const response = await api.get(`/invoices/${id}/pdf`, {
-        responseType: 'blob'
+      const canvas = await html2canvas(invoiceRef.current, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false
       });
       
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `invoice-${invoice?.invoiceNumber}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const imgX = (pdfWidth - imgWidth * ratio) / 2;
+      const imgY = 0;
+      
+      pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+      pdf.save(`invoice-${invoice?.invoiceNumber}.pdf`);
     } catch (error) {
-      console.error('Failed to download PDF:', error);
-      alert('Failed to download PDF. Please try printing instead.');
+      console.error('Failed to generate PDF:', error);
+      alert('Failed to generate PDF. Please try printing instead.');
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -305,12 +327,12 @@ export default function PrintInvoicePage() {
         <button className="btn btn-print" onClick={handlePrint}>
           Print Invoice
         </button>
-        <button className="btn btn-pdf" onClick={handleDownloadPDF}>
-          Download PDF
+        <button className="btn btn-pdf" onClick={handleDownloadPDF} disabled={generating}>
+          {generating ? 'Generating...' : 'Download PDF'}
         </button>
       </div>
       
-      <div className="invoice-page">
+      <div className="invoice-page" ref={invoiceRef}>
         {/* Header */}
         <div className="header-row">
           <div className="company-section">

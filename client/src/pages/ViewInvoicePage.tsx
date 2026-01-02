@@ -58,24 +58,10 @@ export default function ViewInvoicePage() {
     updateStatusMutation.mutate(updateData);
   };
 
-  const downloadPDF = async () => {
-    try {
-      const response = await api.get(`/invoices/${id}/pdf`, {
-        responseType: 'blob'
-      });
-      
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `invoice-${invoice?.invoiceNumber}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      toast.error('Failed to download PDF');
-    }
+  const downloadPDF = () => {
+    // Open print page in new window for PDF download
+    const printUrl = `/print/invoice/${id}`;
+    window.open(printUrl, '_blank');
   };
 
   const printInvoice = () => {

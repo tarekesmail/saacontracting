@@ -32,16 +32,23 @@ const bulkTimesheetSchema = z.object({
 // Get timesheets for current tenant
 router.get('/', async (req: AuthRequest, res, next) => {
   try {
-    const { page = 1, limit = 50, date, laborerId, jobId } = req.query;
+    const { page = 1, limit = 50, date, startDate, endDate, laborerId, jobId } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
     const where: any = {
       tenantId: req.user!.tenantId!,
     };
 
+    // Support single date or date range
     if (date) {
       where.date = new Date(date as string);
+    } else if (startDate && endDate) {
+      where.date = {
+        gte: new Date(startDate as string),
+        lte: new Date(endDate as string)
+      };
     }
+    
     if (laborerId) {
       where.laborerId = laborerId;
     }

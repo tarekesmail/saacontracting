@@ -15,9 +15,15 @@ const userSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
   role: z.enum(['ADMIN', 'READ_ONLY']),
   password: z.string().min(6, 'Password must be at least 6 characters').optional(),
+  tenantId: z.string().nullable().optional(),
 });
 
 type UserForm = z.infer<typeof userSchema>;
+
+interface Tenant {
+  id: string;
+  name: string;
+}
 
 export default function UsersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,6 +46,11 @@ export default function UsersPage() {
 
   const { data: users, isLoading } = useQuery('users', async () => {
     const response = await api.get('/users');
+    return response.data;
+  });
+
+  const { data: tenants } = useQuery<Tenant[]>('tenants', async () => {
+    const response = await api.get('/users/tenants');
     return response.data;
   });
 
@@ -118,6 +129,7 @@ export default function UsersPage() {
     const formData = {
       ...data,
       password: data.password || undefined,
+      tenantId: data.tenantId || null, // Convert empty string to null
     };
 
     if (editingUser) {
@@ -135,6 +147,7 @@ export default function UsersPage() {
       username: userToEdit.username,
       role: userToEdit.role,
       password: '', // Don't pre-fill password
+      tenantId: userToEdit.tenantId || '',
     });
     setIsModalOpen(true);
   };
@@ -215,6 +228,7 @@ export default function UsersPage() {
               <th className="table-header-cell">Username</th>
               <th className="table-header-cell">Email</th>
               <th className="table-header-cell">Role</th>
+              <th className="table-header-cell">Tenant Access</th>
               <th className="table-header-cell">Status</th>
               <th className="table-header-cell">Created</th>
               <th className="table-header-cell">Actions</th>
@@ -237,6 +251,13 @@ export default function UsersPage() {
                   <span className={`badge ${getRoleBadgeColor(userItem.role)}`}>
                     {userItem.role === 'READ_ONLY' ? 'Read Only' : userItem.role}
                   </span>
+                </td>
+                <td className="table-cell">
+                  {userItem.tenant ? (
+                    <span className="badge badge-info">{userItem.tenant.name}</span>
+                  ) : (
+                    <span className="badge badge-success">All Tenants</span>
+                  )}
                 </td>
                 <td className="table-cell">
                   <span className={`badge ${getStatusBadgeColor(userItem.isActive)}`}>
@@ -332,6 +353,21 @@ export default function UsersPage() {
                   {errors.role && <p className="text-red-600 text-sm">{errors.role.message}</p>}
                   <p className="text-xs text-gray-500 mt-1">
                     Admin: Full access to all features. Read Only: Can view data but cannot make changes.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="label">Tenant Access</label>
+                  <select {...register('tenantId')} className="input">
+                    <option value="">All Tenants</option>
+                    {tenants?.map((tenant) => (
+                      <option key={tenant.id} value={tenant.id}>
+                        {tenant.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Select a specific tenant to restrict access, or "All Tenants" for full access.
                   </p>
                 </div>
 

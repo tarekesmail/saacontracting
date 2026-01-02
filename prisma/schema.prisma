@@ -16,6 +16,10 @@ model User {
   role      UserRole @default(READ_ONLY)
   isActive  Boolean  @default(true)
   
+  // Tenant restriction - NULL means access to all tenants
+  tenantId  String?  @map("tenant_id")
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -37,6 +41,7 @@ model Tenant {
   credits          Credit[]
   supplyCategories SupplyCategory[]
   supplies         Supply[]
+  users            User[]
 
   @@map("tenants")
 }

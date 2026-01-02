@@ -14,6 +14,7 @@ const createUserSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   role: z.enum(['ADMIN', 'READ_ONLY']),
+  tenantId: z.string().nullable().optional(), // null = all tenants
 });
 
 const updateUserSchema = z.object({
@@ -21,6 +22,7 @@ const updateUserSchema = z.object({
   email: z.string().email('Invalid email address').optional(),
   password: z.string().min(6, 'Password must be at least 6 characters').optional(),
   role: z.enum(['ADMIN', 'READ_ONLY']).optional(),
+  tenantId: z.string().nullable().optional(), // null = all tenants
 });
 
 // Middleware to check admin role
@@ -42,6 +44,13 @@ router.get('/', auth, requireAdmin, async (req: AuthRequest, res) => {
         email: true,
         role: true,
         isActive: true,
+        tenantId: true,
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         createdAt: true,
         updatedAt: true,
       },
@@ -54,6 +63,26 @@ router.get('/', auth, requireAdmin, async (req: AuthRequest, res) => {
   } catch (error) {
     console.error('Error fetching users:', error);
     res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+// Get all tenants (for dropdown)
+router.get('/tenants', auth, requireAdmin, async (req: AuthRequest, res) => {
+  try {
+    const tenants = await prisma.tenant.findMany({
+      select: {
+        id: true,
+        name: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
+    res.json(tenants);
+  } catch (error) {
+    console.error('Error fetching tenants:', error);
+    res.status(500).json({ error: 'Failed to fetch tenants' });
   }
 });
 
@@ -107,14 +136,28 @@ router.post('/', auth, requireAdmin, async (req: AuthRequest, res) => {
       return res.status(400).json({ error: 'Email already exists' });
     }
 
+    // Validate tenantId if provided
+    if (validatedData.tenantId) {
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: validatedData.tenantId },
+      });
+      if (!tenant) {
+        return res.status(400).json({ error: 'Invalid tenant selected' });
+      }
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(validatedData.password, 10);
 
     // Create user
     const user = await prisma.user.create({
       data: {
-        ...validatedData,
+        name: validatedData.name,
+        email: validatedData.email,
+        username: validatedData.username,
         password: hashedPassword,
+        role: validatedData.role,
+        tenantId: validatedData.tenantId || null,
       },
       select: {
         id: true,
@@ -123,6 +166,13 @@ router.post('/', auth, requireAdmin, async (req: AuthRequest, res) => {
         email: true,
         role: true,
         isActive: true,
+        tenantId: true,
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         createdAt: true,
       },
     });
@@ -163,6 +213,16 @@ router.put('/:id', auth, requireAdmin, async (req: AuthRequest, res) => {
       }
     }
 
+    // Validate tenantId if provided
+    if (validatedData.tenantId) {
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: validatedData.tenantId },
+      });
+      if (!tenant) {
+        return res.status(400).json({ error: 'Invalid tenant selected' });
+      }
+    }
+
     // Prepare update data
     const updateData: any = {};
     if (validatedData.name) updateData.name = validatedData.name;
@@ -170,6 +230,10 @@ router.put('/:id', auth, requireAdmin, async (req: AuthRequest, res) => {
     if (validatedData.role) updateData.role = validatedData.role;
     if (validatedData.password) {
       updateData.password = await bcrypt.hash(validatedData.password, 10);
+    }
+    // Handle tenantId - explicitly set to null if empty string or null
+    if (validatedData.tenantId !== undefined) {
+      updateData.tenantId = validatedData.tenantId || null;
     }
 
     // Update user
@@ -183,6 +247,13 @@ router.put('/:id', auth, requireAdmin, async (req: AuthRequest, res) => {
         email: true,
         role: true,
         isActive: true,
+        tenantId: true,
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         createdAt: true,
         updatedAt: true,
       },

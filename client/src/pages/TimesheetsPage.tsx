@@ -37,7 +37,10 @@ export default function TimesheetsPage() {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  });
   const [defaultOvertimeMultiplier, setDefaultOvertimeMultiplier] = useState(1.5);
   const [timesheetEntries, setTimesheetEntries] = useState<TimesheetEntry[]>([]);
   const [showSummary, setShowSummary] = useState(false);
@@ -123,18 +126,19 @@ export default function TimesheetsPage() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    // Group monthly timesheets by date
+    // Group monthly timesheets by date (using local date to avoid timezone issues)
     const timesheetsByDate: { [key: string]: number } = {};
     if (monthlyTimesheets) {
       monthlyTimesheets.forEach((ts: any) => {
-        const dateStr = new Date(ts.date).toISOString().split('T')[0];
+        const tsDate = new Date(ts.date);
+        const dateStr = `${tsDate.getFullYear()}-${String(tsDate.getMonth() + 1).padStart(2, '0')}-${String(tsDate.getDate()).padStart(2, '0')}`;
         timesheetsByDate[dateStr] = (timesheetsByDate[dateStr] || 0) + parseFloat(ts.hoursWorked) + parseFloat(ts.overtime);
       });
     }
     
     const current = new Date(startDate);
     while (current <= endDate) {
-      const dateStr = current.toISOString().split('T')[0];
+      const dateStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
       days.push({
         date: new Date(current),
         dateStr,

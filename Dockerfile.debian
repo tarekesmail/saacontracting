@@ -41,6 +41,20 @@ RUN apt-get update && apt-get install -y \
     fonts-freefont-ttf \
     fonts-dejavu-core \
     fonts-arabeyes \
+    libgbm1 \
+    libnss3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libasound2 \
     --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
@@ -58,16 +72,13 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
-# Create app user but run as root to avoid permission issues
-RUN groupadd -r nodejs && useradd -r -g nodejs nodejs
-RUN chown -R nodejs:nodejs /app
-
-# Switch to app user
-USER nodejs
+# Create temp directory for Chromium with proper permissions
+RUN mkdir -p /tmp/.chromium && chmod 777 /tmp/.chromium
 
 EXPOSE 3000
 
 ENV NODE_ENV=production
+ENV HOME=/tmp
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]

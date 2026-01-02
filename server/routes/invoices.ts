@@ -557,7 +557,19 @@ router.get('/:id/pdf', async (req: AuthRequest, res, next) => {
         '--disable-dev-shm-usage',
         '--disable-gpu',
         '--disable-software-rasterizer',
-        '--font-render-hinting=none'
+        '--disable-extensions',
+        '--disable-background-networking',
+        '--disable-default-apps',
+        '--disable-sync',
+        '--disable-translate',
+        '--hide-scrollbars',
+        '--metrics-recording-only',
+        '--mute-audio',
+        '--no-first-run',
+        '--safebrowsing-disable-auto-update',
+        '--single-process',
+        '--disable-crash-reporter',
+        '--disable-breakpad'
       ]
     });
 

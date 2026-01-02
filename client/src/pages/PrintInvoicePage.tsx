@@ -39,17 +39,22 @@ export default function PrintInvoicePage() {
     setGenerating(true);
     
     try {
+      // Wait for fonts to load
+      await document.fonts.ready;
+      
       const canvas = await html2canvas(invoiceRef.current, {
-        scale: 4,
+        scale: 3,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false,
         imageTimeout: 0,
-        removeContainer: true
+        removeContainer: true,
+        windowWidth: invoiceRef.current.scrollWidth,
+        windowHeight: invoiceRef.current.scrollHeight
       });
       
-      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      const imgData = canvas.toDataURL('image/png', 1.0);
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -339,21 +344,22 @@ export default function PrintInvoicePage() {
           border: 1px solid #1e3a5f;
           padding: 8px 6px;
           text-align: center;
-          font-weight: 600;
+          font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 0.3px;
           font-size: 9px;
           vertical-align: middle;
           line-height: 1.4;
+          -webkit-font-smoothing: antialiased;
+          text-rendering: geometricPrecision;
         }
         
         .items-table th .arabic-text {
           display: block;
-          font-size: 10px;
-          font-weight: 500;
+          font-size: 11px;
+          font-weight: 600;
           text-transform: none;
           margin-top: 2px;
-          opacity: 0.9;
         }
         
         .items-table td {
@@ -395,20 +401,21 @@ export default function PrintInvoicePage() {
           background: #1e3a5f;
           color: white;
           padding: 12px 25px;
-          border-radius: 8px;
+          border-radius: 4px;
           display: flex;
           align-items: center;
           justify-content: center;
+          -webkit-font-smoothing: antialiased;
+          text-rendering: geometricPrecision;
         }
         
         .net-amount-label {
-          font-weight: 600;
+          font-weight: 700;
           font-size: 14px;
-          opacity: 0.9;
         }
         
         .net-amount-value {
-          font-weight: 700;
+          font-weight: 800;
           font-size: 18px;
           margin-left: 15px;
         }

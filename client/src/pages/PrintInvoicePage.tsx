@@ -207,6 +207,9 @@ export default function PrintInvoicePage() {
         
         .qr-code {
           margin-top: 15px;
+          text-align: right;
+          display: flex;
+          justify-content: flex-end;
         }
         
         .qr-code img {

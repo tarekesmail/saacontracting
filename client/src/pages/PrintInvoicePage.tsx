@@ -76,23 +76,38 @@ export default function PrintInvoicePage() {
       // Convert jsPDF to array buffer
       const invoicePdfBytes = pdf.output('arraybuffer');
       
-      // Fetch the additional PDF pages
-      const additionalPdfResponse = await fetch('/invoice_pdf.pdf');
-      const additionalPdfBytes = await additionalPdfResponse.arrayBuffer();
+      let finalPdfBytes: Uint8Array;
       
-      // Merge PDFs using pdf-lib
-      const invoicePdfDoc = await PDFDocument.load(invoicePdfBytes);
-      const additionalPdfDoc = await PDFDocument.load(additionalPdfBytes);
+      try {
+        // Fetch the additional PDF pages
+        const additionalPdfResponse = await fetch('/invoice_pdf.pdf');
+        
+        if (additionalPdfResponse.ok) {
+          const additionalPdfBytes = await additionalPdfResponse.arrayBuffer();
+          
+          // Merge PDFs using pdf-lib
+          const invoicePdfDoc = await PDFDocument.load(invoicePdfBytes);
+          const additionalPdfDoc = await PDFDocument.load(additionalPdfBytes);
+          
+          // Copy all pages from additional PDF to invoice PDF
+          const additionalPages = await invoicePdfDoc.copyPages(additionalPdfDoc, additionalPdfDoc.getPageIndices());
+          additionalPages.forEach(page => invoicePdfDoc.addPage(page));
+          
+          // Save merged PDF
+          finalPdfBytes = await invoicePdfDoc.save();
+        } else {
+          // If additional PDF not found, just use the invoice PDF
+          console.warn('Additional PDF not found, using invoice only');
+          finalPdfBytes = new Uint8Array(invoicePdfBytes);
+        }
+      } catch (mergeError) {
+        // If merge fails, just use the invoice PDF
+        console.warn('PDF merge failed, using invoice only:', mergeError);
+        finalPdfBytes = new Uint8Array(invoicePdfBytes);
+      }
       
-      // Copy all pages from additional PDF to invoice PDF
-      const additionalPages = await invoicePdfDoc.copyPages(additionalPdfDoc, additionalPdfDoc.getPageIndices());
-      additionalPages.forEach(page => invoicePdfDoc.addPage(page));
-      
-      // Save merged PDF
-      const mergedPdfBytes = await invoicePdfDoc.save();
-      
-      // Download merged PDF
-      const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+      // Download PDF
+      const blob = new Blob([finalPdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;

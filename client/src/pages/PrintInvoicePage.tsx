@@ -338,24 +338,25 @@ export default function PrintInvoicePage() {
           background: #1e3a5f;
           color: white;
           border: 1px solid #1e3a5f;
-          padding: 8px 6px;
+          padding: 6px 4px;
           text-align: center;
           font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 0.3px;
           font-size: 9px;
           vertical-align: middle;
-          line-height: 1.4;
+          line-height: 1.3;
           -webkit-font-smoothing: antialiased;
           text-rendering: geometricPrecision;
         }
         
         .items-table th .arabic-text {
           display: block;
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 600;
           text-transform: none;
-          margin-top: 2px;
+          margin-top: 1px;
+          direction: rtl;
         }
         
         .items-table td {
@@ -390,13 +391,13 @@ export default function PrintInvoicePage() {
         .summary-section {
           display: flex;
           justify-content: flex-end;
-          margin: 25px 0;
+          margin: 15px 0;
         }
         
         .net-amount {
           background: #1e3a5f;
           color: white;
-          padding: 12px 25px;
+          padding: 10px 20px;
           border-radius: 4px;
           display: flex;
           align-items: center;
@@ -407,23 +408,23 @@ export default function PrintInvoicePage() {
         
         .net-amount-label {
           font-weight: 700;
-          font-size: 14px;
+          font-size: 13px;
         }
         
         .net-amount-value {
           font-weight: 800;
-          font-size: 18px;
-          margin-left: 15px;
+          font-size: 16px;
+          margin-left: 12px;
         }
         
         .amount-words {
-          margin: 25px 0;
-          font-size: 12px;
+          margin: 15px 0;
+          font-size: 11px;
           color: #4a5568;
-          padding: 10px 15px;
+          padding: 8px 12px;
           background: #f7fafc;
           border-left: 4px solid #1e3a5f;
-          border-radius: 0 8px 8px 0;
+          border-radius: 0 4px 4px 0;
           display: flex;
           align-items: center;
           gap: 5px;
@@ -434,24 +435,24 @@ export default function PrintInvoicePage() {
         }
         
         .bank-details {
-          margin-top: 35px;
-          font-size: 11px;
+          margin-top: 20px;
+          font-size: 10px;
           color: #4a5568;
-          padding: 12px 15px;
+          padding: 10px 12px;
           background: #f7fafc;
-          border-radius: 8px;
+          border-radius: 4px;
           border: 1px solid #e2e8f0;
         }
         
         .bank-details p {
-          margin: 3px 0;
+          margin: 2px 0;
         }
         
         .bank-details p:first-child {
           font-weight: 700;
           color: #1e3a5f;
-          font-size: 12px;
-          margin-bottom: 6px;
+          font-size: 11px;
+          margin-bottom: 4px;
         }
         
         .bank-details .arabic-text {
@@ -563,12 +564,12 @@ export default function PrintInvoicePage() {
           <thead>
             <tr>
               <th className="col-num">#</th>
-              <th className="col-desc">Description<br/><span className="arabic-text">الوصف</span></th>
-              <th className="col-qty">Qty<br/><span className="arabic-text">الكمية</span></th>
-              <th className="col-rate">Rate<br/><span className="arabic-text">السعر</span></th>
-              <th className="col-amount">Taxable Amount<br/><span className="arabic-text">المبلغ الخاضع للضريبة</span></th>
-              <th className="col-tax">Tax (SAR)<br/><span className="arabic-text">الضريبة</span></th>
-              <th className="col-total">Net Amount<br/><span className="arabic-text">المبلغ الصافي</span></th>
+              <th className="col-desc">Description<br/><span className="arabic-text" dir="rtl">الوصف</span></th>
+              <th className="col-qty">Qty<br/><span className="arabic-text" dir="rtl">الكمية</span></th>
+              <th className="col-rate">Rate<br/><span className="arabic-text" dir="rtl">السعر</span></th>
+              <th className="col-amount">Taxable Amount<br/><span className="arabic-text" dir="rtl">المبلغ الخاضع للضريبة</span></th>
+              <th className="col-tax">Tax (SAR)<br/><span className="arabic-text" dir="rtl">الضريبة</span></th>
+              <th className="col-total">Net Amount<br/><span className="arabic-text" dir="rtl">المبلغ الصافي</span></th>
             </tr>
           </thead>
           <tbody>

@@ -100,21 +100,28 @@ export default function PrintInvoicePage() {
           const additionalPdfBytes = await additionalPdfResponse.arrayBuffer();
           console.log('Additional PDF size:', additionalPdfBytes.byteLength);
           
-          // Merge PDFs using pdf-lib
+          // Load both PDFs
           const invoicePdfDoc = await PDFDocument.load(invoicePdfBytes);
           const additionalPdfDoc = await PDFDocument.load(additionalPdfBytes);
           
           console.log('Invoice PDF pages:', invoicePdfDoc.getPageCount());
           console.log('Additional PDF pages:', additionalPdfDoc.getPageCount());
           
-          // Copy all pages from additional PDF to invoice PDF
-          const additionalPages = await invoicePdfDoc.copyPages(additionalPdfDoc, additionalPdfDoc.getPageIndices());
-          additionalPages.forEach(page => invoicePdfDoc.addPage(page));
+          // Create a new PDF document for the merged result
+          const mergedPdf = await PDFDocument.create();
           
-          console.log('Merged PDF pages:', invoicePdfDoc.getPageCount());
+          // Copy invoice pages first
+          const invoicePages = await mergedPdf.copyPages(invoicePdfDoc, invoicePdfDoc.getPageIndices());
+          invoicePages.forEach(page => mergedPdf.addPage(page));
+          
+          // Copy additional PDF pages
+          const additionalPages = await mergedPdf.copyPages(additionalPdfDoc, additionalPdfDoc.getPageIndices());
+          additionalPages.forEach(page => mergedPdf.addPage(page));
+          
+          console.log('Merged PDF pages:', mergedPdf.getPageCount());
           
           // Save merged PDF
-          finalPdfBytes = await invoicePdfDoc.save();
+          finalPdfBytes = await mergedPdf.save();
         } else {
           // If additional PDF not found, just use the invoice PDF
           console.warn('Additional PDF not found (status:', additionalPdfResponse.status, '), using invoice only');

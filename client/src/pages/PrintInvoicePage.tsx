@@ -337,13 +337,23 @@ export default function PrintInvoicePage() {
           background: #1e3a5f;
           color: white;
           border: 1px solid #1e3a5f;
-          padding: 8px;
+          padding: 8px 6px;
           text-align: center;
           font-weight: 600;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
-          font-size: 10px;
+          letter-spacing: 0.3px;
+          font-size: 9px;
           vertical-align: middle;
+          line-height: 1.4;
+        }
+        
+        .items-table th .arabic-text {
+          display: block;
+          font-size: 10px;
+          font-weight: 500;
+          text-transform: none;
+          margin-top: 2px;
+          opacity: 0.9;
         }
         
         .items-table td {
@@ -545,12 +555,12 @@ export default function PrintInvoicePage() {
           <thead>
             <tr>
               <th className="col-num">#</th>
-              <th className="col-desc">Description</th>
-              <th className="col-qty">Qty</th>
-              <th className="col-rate">Rate</th>
-              <th className="col-amount">Taxable Amount</th>
-              <th className="col-tax">Tax (SAR)</th>
-              <th className="col-total">Net Amount</th>
+              <th className="col-desc">Description<br/><span className="arabic-text">الوصف</span></th>
+              <th className="col-qty">Qty<br/><span className="arabic-text">الكمية</span></th>
+              <th className="col-rate">Rate<br/><span className="arabic-text">السعر</span></th>
+              <th className="col-amount">Taxable Amount<br/><span className="arabic-text">المبلغ الخاضع للضريبة</span></th>
+              <th className="col-tax">Tax (SAR)<br/><span className="arabic-text">الضريبة</span></th>
+              <th className="col-total">Net Amount<br/><span className="arabic-text">المبلغ الصافي</span></th>
             </tr>
           </thead>
           <tbody>

@@ -2,9 +2,9 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { numberToWords } from '../utils/numberToWords';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { pdf } from '@react-pdf/renderer';
 import { PDFDocument } from 'pdf-lib';
+import { InvoicePDF } from '../components/InvoicePDF';
 
 export default function PrintInvoicePage() {
   const { id } = useParams<{ id: string }>();
@@ -35,55 +35,16 @@ export default function PrintInvoicePage() {
   };
 
   const handleDownloadPDF = async () => {
-    if (!invoiceRef.current) return;
+    if (!invoice) return;
     
     setGenerating(true);
     
     try {
-      // Wait for fonts to load
-      await document.fonts.ready;
+      // Generate PDF using React-PDF (proper Arabic text support)
+      const invoiceBlob = await pdf(<InvoicePDF invoice={invoice} />).toBlob();
+      const invoicePdfBytes = await invoiceBlob.arrayBuffer();
       
-      // Scroll to top to ensure full capture
-      window.scrollTo(0, 0);
-      
-      // Small delay to ensure fonts are rendered
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const element = invoiceRef.current;
-      
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        imageTimeout: 0,
-        width: element.scrollWidth,
-        height: element.scrollHeight,
-        x: 0,
-        y: 0,
-        scrollX: 0,
-        scrollY: 0
-      });
-      
-      const imgData = canvas.toDataURL('image/png', 1.0);
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-      const imgX = (pdfWidth - imgWidth * ratio) / 2;
-      const imgY = 0;
-      
-      pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
-      
-      let finalPdfBytes: ArrayBuffer;
+      let finalPdfBytes: Uint8Array | ArrayBuffer;
       
       try {
         // Fetch the additional PDF pages
@@ -102,10 +63,7 @@ export default function PrintInvoicePage() {
           const pageCount = additionalPdfDoc.getPageCount();
           console.log('Additional PDF pages:', pageCount);
           
-          // Get the jsPDF output as arraybuffer
-          const invoicePdfBytes = pdf.output('arraybuffer');
-          
-          // Load invoice PDF and additional PDF
+          // Load invoice PDF
           const invoicePdfDoc = await PDFDocument.load(invoicePdfBytes);
           
           // Create merged PDF
@@ -124,15 +82,24 @@ export default function PrintInvoicePage() {
           finalPdfBytes = await mergedPdf.save();
         } else {
           console.warn('Additional PDF not found, using invoice only');
-          finalPdfBytes = pdf.output('arraybuffer');
+          finalPdfBytes = invoicePdfBytes;
         }
       } catch (mergeError) {
         console.error('PDF merge failed:', mergeError);
-        finalPdfBytes = pdf.output('arraybuffer');
+        finalPdfBytes = invoicePdfBytes;
       }
       
-      // Download PDF
-      const blob = new Blob([finalPdfBytes], { type: 'application/pdf' });
+      // Download PDF - convert to ArrayBuffer for Blob
+      let blobData: ArrayBuffer;
+      if (finalPdfBytes instanceof Uint8Array) {
+        blobData = finalPdfBytes.buffer.slice(
+          finalPdfBytes.byteOffset,
+          finalPdfBytes.byteOffset + finalPdfBytes.byteLength
+        ) as ArrayBuffer;
+      } else {
+        blobData = finalPdfBytes;
+      }
+      const blob = new Blob([blobData], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;

@@ -43,5 +43,21 @@ export const requireTenant = (req: AuthRequest, res: Response, next: NextFunctio
   next();
 };
 
+// Middleware to require admin role for write operations
+export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (req.user?.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Admin access required for this operation' });
+  }
+  next();
+};
+
+// Middleware to require write access (blocks READ_ONLY users)
+export const requireWriteAccess = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (req.user?.role === 'READ_ONLY') {
+    return res.status(403).json({ error: 'You do not have permission to perform this action' });
+  }
+  next();
+};
+
 // Convenience export
 export const auth = authenticateToken;

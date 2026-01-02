@@ -1,7 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
-import { AuthRequest } from '../middleware/auth';
+import { AuthRequest, requireWriteAccess } from '../middleware/auth';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -85,7 +85,7 @@ router.get('/:id', async (req: AuthRequest, res, next) => {
 });
 
 // Create supply
-router.post('/', async (req: AuthRequest, res, next) => {
+router.post('/', requireWriteAccess, async (req: AuthRequest, res, next) => {
   try {
     const data = supplySchema.parse(req.body);
 
@@ -127,7 +127,7 @@ router.post('/', async (req: AuthRequest, res, next) => {
 });
 
 // Update supply
-router.put('/:id', async (req: AuthRequest, res, next) => {
+router.put('/:id', requireWriteAccess, async (req: AuthRequest, res, next) => {
   try {
     const data = supplySchema.parse(req.body);
 
@@ -183,7 +183,7 @@ router.put('/:id', async (req: AuthRequest, res, next) => {
 });
 
 // Delete supply
-router.delete('/:id', async (req: AuthRequest, res, next) => {
+router.delete('/:id', requireWriteAccess, async (req: AuthRequest, res, next) => {
   try {
     const supply = await prisma.supply.deleteMany({
       where: {

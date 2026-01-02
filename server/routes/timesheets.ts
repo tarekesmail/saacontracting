@@ -1,7 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
-import { AuthRequest } from '../middleware/auth';
+import { AuthRequest, requireWriteAccess } from '../middleware/auth';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -183,7 +183,7 @@ router.get('/summary', async (req: AuthRequest, res, next) => {
 });
 
 // Create single timesheet
-router.post('/', async (req: AuthRequest, res, next) => {
+router.post('/', requireWriteAccess, async (req: AuthRequest, res, next) => {
   try {
     const data = timesheetSchema.parse(req.body);
 
@@ -222,7 +222,7 @@ router.post('/', async (req: AuthRequest, res, next) => {
 });
 
 // Bulk create/update timesheets
-router.post('/bulk', async (req: AuthRequest, res, next) => {
+router.post('/bulk', requireWriteAccess, async (req: AuthRequest, res, next) => {
   try {
     const data = bulkTimesheetSchema.parse(req.body);
     const tenantId = req.user!.tenantId!;
@@ -305,7 +305,7 @@ router.post('/bulk', async (req: AuthRequest, res, next) => {
 });
 
 // Update timesheet
-router.put('/:id', async (req: AuthRequest, res, next) => {
+router.put('/:id', requireWriteAccess, async (req: AuthRequest, res, next) => {
   try {
     const data = timesheetSchema.parse(req.body);
 
@@ -339,7 +339,7 @@ router.put('/:id', async (req: AuthRequest, res, next) => {
 });
 
 // Delete timesheet
-router.delete('/:id', async (req: AuthRequest, res, next) => {
+router.delete('/:id', requireWriteAccess, async (req: AuthRequest, res, next) => {
   try {
     const timesheet = await prisma.timesheet.deleteMany({
       where: {

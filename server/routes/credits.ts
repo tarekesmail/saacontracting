@@ -1,7 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
-import { AuthRequest } from '../middleware/auth';
+import { AuthRequest, requireWriteAccess } from '../middleware/auth';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -86,7 +86,7 @@ router.get('/:id', async (req: AuthRequest, res, next) => {
 });
 
 // Create credit
-router.post('/', async (req: AuthRequest, res, next) => {
+router.post('/', requireWriteAccess, async (req: AuthRequest, res, next) => {
   try {
     const data = creditSchema.parse(req.body);
 
@@ -113,7 +113,7 @@ router.post('/', async (req: AuthRequest, res, next) => {
 });
 
 // Update credit
-router.put('/:id', async (req: AuthRequest, res, next) => {
+router.put('/:id', requireWriteAccess, async (req: AuthRequest, res, next) => {
   try {
     const data = creditSchema.parse(req.body);
 
@@ -152,7 +152,7 @@ router.put('/:id', async (req: AuthRequest, res, next) => {
 });
 
 // Delete credit
-router.delete('/:id', async (req: AuthRequest, res, next) => {
+router.delete('/:id', requireWriteAccess, async (req: AuthRequest, res, next) => {
   try {
     const credit = await prisma.credit.deleteMany({
       where: {
@@ -172,7 +172,7 @@ router.delete('/:id', async (req: AuthRequest, res, next) => {
 });
 
 // Update credit status
-router.patch('/:id/status', async (req: AuthRequest, res, next) => {
+router.patch('/:id/status', requireWriteAccess, async (req: AuthRequest, res, next) => {
   try {
     const { status } = req.body;
 

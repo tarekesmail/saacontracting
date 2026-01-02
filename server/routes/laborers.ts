@@ -1,7 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
-import { AuthRequest } from '../middleware/auth';
+import { AuthRequest, requireWriteAccess } from '../middleware/auth';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -157,7 +157,7 @@ router.get('/', async (req: AuthRequest, res, next) => {
 });
 
 // Create laborer
-router.post('/', async (req: AuthRequest, res, next) => {
+router.post('/', requireWriteAccess, async (req: AuthRequest, res, next) => {
   try {
     const data = laborerSchema.parse(req.body);
 
@@ -214,7 +214,7 @@ router.post('/', async (req: AuthRequest, res, next) => {
 });
 
 // Update laborer
-router.put('/:id', async (req: AuthRequest, res, next) => {
+router.put('/:id', requireWriteAccess, async (req: AuthRequest, res, next) => {
   try {
     const data = laborerSchema.parse(req.body);
 
@@ -274,7 +274,7 @@ router.put('/:id', async (req: AuthRequest, res, next) => {
 });
 
 // Delete laborer
-router.delete('/:id', async (req: AuthRequest, res, next) => {
+router.delete('/:id', requireWriteAccess, async (req: AuthRequest, res, next) => {
   try {
     const laborer = await prisma.laborer.updateMany({
       where: {

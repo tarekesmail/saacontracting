@@ -1,7 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
-import { AuthRequest } from '../middleware/auth';
+import { AuthRequest, requireWriteAccess } from '../middleware/auth';
 import QRCode from 'qrcode';
 import puppeteer from 'puppeteer';
 
@@ -81,7 +81,7 @@ async function generateMonthlyInvoiceNumber(tenantId: string, month: number, yea
 }
 
 // Generate monthly invoice from timesheets
-router.post('/generate-monthly', async (req: AuthRequest, res, next) => {
+router.post('/generate-monthly', requireWriteAccess, async (req: AuthRequest, res, next) => {
   try {
     const { month, year, issueDate, dueDate, customerName, customerVat, customerAddress, customerCity } = req.body;
     const tenantId = req.user!.tenantId!;
@@ -409,7 +409,7 @@ router.get('/:id', async (req: AuthRequest, res, next) => {
 });
 
 // Create invoice
-router.post('/', async (req: AuthRequest, res, next) => {
+router.post('/', requireWriteAccess, async (req: AuthRequest, res, next) => {
   try {
     const data = invoiceSchema.parse(req.body);
     const tenantId = req.user!.tenantId!;
@@ -500,7 +500,7 @@ router.post('/', async (req: AuthRequest, res, next) => {
 });
 
 // Update invoice status
-router.patch('/:id/status', async (req: AuthRequest, res, next) => {
+router.patch('/:id/status', requireWriteAccess, async (req: AuthRequest, res, next) => {
   try {
     const { status, paidDate, paymentMethod } = req.body;
 
@@ -963,7 +963,7 @@ function generateInvoiceHTML(invoice: any): string {
 }
 
 // Delete invoice
-router.delete('/:id', async (req: AuthRequest, res, next) => {
+router.delete('/:id', requireWriteAccess, async (req: AuthRequest, res, next) => {
   try {
     const invoice = await prisma.invoice.deleteMany({
       where: {

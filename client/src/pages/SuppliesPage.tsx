@@ -553,12 +553,15 @@ export default function SuppliesPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Color
                 </label>
-                <input
-                  type="color"
-                  value={categoryFormData.color}
-                  onChange={(e) => setCategoryFormData({ ...categoryFormData, color: e.target.value })}
-                  className="w-full h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="color"
+                    value={categoryFormData.color}
+                    onChange={(e) => setCategoryFormData({ ...categoryFormData, color: e.target.value })}
+                    className="w-10 h-10 border border-gray-300 rounded-lg cursor-pointer p-1"
+                  />
+                  <span className="text-sm text-gray-500">{categoryFormData.color}</span>
+                </div>
               </div>
 
               <div className="flex justify-end space-x-3 pt-4">

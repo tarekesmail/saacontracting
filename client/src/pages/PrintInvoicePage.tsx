@@ -161,8 +161,8 @@ export default function PrintInvoicePage() {
             border: 1px solid #e2e8f0 !important;
           }
           
-          .header-row {
-            border-bottom: 3px solid #1e3a5f !important;
+          .header-divider {
+            border-bottom: 2px solid #1e3a5f !important;
           }
           
           .company-name {
@@ -209,31 +209,15 @@ export default function PrintInvoicePage() {
           box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         
-        .header-row {
-          display: table;
-          width: 100%;
-          margin-bottom: 30px;
-          padding-bottom: 20px;
-          border-bottom: 3px solid #1e3a5f;
-        }
-        
-        .company-section {
-          display: table-cell;
-          width: 65%;
-          vertical-align: top;
-        }
-        
-        .invoice-title-section {
-          display: table-cell;
-          width: 35%;
-          vertical-align: top;
-          text-align: right;
+        .company-header {
+          text-align: center;
+          margin-bottom: 15px;
         }
         
         .company-name {
-          font-size: 20px;
+          font-size: 18px;
           font-weight: 700;
-          margin: 0 0 8px 0;
+          margin: 0 0 5px 0;
           line-height: 1.3;
           color: #1e3a5f;
           letter-spacing: -0.5px;
@@ -241,26 +225,38 @@ export default function PrintInvoicePage() {
         
         .company-arabic {
           font-family: 'Noto Naskh Arabic', serif;
-          font-size: 18px;
-          margin: 0 0 12px 0;
+          font-size: 16px;
+          margin: 0 0 8px 0;
           direction: rtl;
           font-weight: 600;
           color: #2d5a87;
         }
         
-        .company-details {
-          font-size: 12px;
-          margin: 4px 0;
+        .company-info-row {
+          font-size: 11px;
           color: #4a5568;
+          display: flex;
+          justify-content: center;
+          gap: 30px;
         }
         
-        .company-details strong {
+        .company-info-row strong {
           color: #1e3a5f;
           font-weight: 600;
         }
         
+        .header-divider {
+          border-bottom: 2px solid #1e3a5f;
+          margin: 15px 0;
+        }
+        
+        .invoice-title-center {
+          text-align: center;
+          margin-bottom: 20px;
+        }
+        
         .invoice-title {
-          font-size: 28px;
+          font-size: 24px;
           font-weight: 700;
           margin: 0 0 5px 0;
           color: #1e3a5f;
@@ -269,7 +265,7 @@ export default function PrintInvoicePage() {
         
         .invoice-title-arabic {
           font-family: 'Noto Naskh Arabic', serif;
-          font-size: 20px;
+          font-size: 18px;
           direction: rtl;
           font-weight: 600;
           color: #2d5a87;
@@ -519,18 +515,23 @@ export default function PrintInvoicePage() {
       </div>
       
       <div className="invoice-page" ref={invoiceRef}>
-        {/* Header */}
-        <div className="header-row">
-          <div className="company-section">
-            <div className="company-name">SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY</div>
-            <div className="company-arabic">شركة صالح عبدالله المالكي للمقاولات العامة</div>
-            <div className="company-details"><strong>VAT:</strong> 312886534600003</div>
-            <div className="company-details"><strong>Email:</strong> tawaffallah@gmail.com</div>
+        {/* Company Header */}
+        <div className="company-header">
+          <div className="company-name">SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY</div>
+          <div className="company-arabic">شركة صالح عبدالله المالكي للمقاولات العامة</div>
+          <div className="company-info-row">
+            <span><strong>VAT:</strong> 312886534600003</span>
+            <span><strong>Email:</strong> tawaffallah@gmail.com</span>
           </div>
-          <div className="invoice-title-section">
-            <div className="invoice-title">Tax Invoice</div>
-            <div className="invoice-title-arabic">فاتورة ضريبية</div>
-          </div>
+        </div>
+        
+        {/* Divider */}
+        <div className="header-divider"></div>
+        
+        {/* Invoice Title */}
+        <div className="invoice-title-center">
+          <div className="invoice-title">VAT Invoice</div>
+          <div className="invoice-title-arabic">فاتورة ضريبة القيمة المضافة</div>
         </div>
 
         {/* Details Row */}

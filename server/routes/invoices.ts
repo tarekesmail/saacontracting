@@ -31,7 +31,7 @@ async function generateZATCAQRCode(invoice: any, tenant: any): Promise<string> {
   // Use the actual company name, not tenant name
   const companyName = 'SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY';
   const sellerName = Buffer.from(companyName, 'utf8');
-  const vatNumber = Buffer.from('312886534600003', 'utf8'); // Your VAT number
+  const vatNumber = Buffer.from('312886354600003', 'utf8'); // Your VAT number
   
   // Use Riyadh timezone (Asia/Riyadh = UTC+3)
   const now = new Date();
@@ -866,7 +866,7 @@ function generateInvoiceHTML(invoice: any): string {
             <div class="company-info">
                 <h1>SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY</h1>
                 <div class="arabic">شركة صالح عبدالله المالكي للمقاولات العامة</div>
-                <p><strong>VAT:</strong> 312886534600003</p>
+                <p><strong>VAT:</strong> 312886354600003</p>
                 <p><strong>Email:</strong> tawaffallah@gmail.com</p>
             </div>
             <div class="invoice-title">

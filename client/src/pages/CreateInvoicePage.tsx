@@ -561,7 +561,7 @@ export default function CreateInvoicePage() {
                 <div>
                   <h1 className="text-xl font-bold">SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY</h1>
                   <p className="text-lg">شركة صالح عبدالله المالكي للمقاولات العامة</p>
-                  <p className="text-sm mt-2">VAT: 312886534600003</p>
+                  <p className="text-sm mt-2">VAT: 312886354600003</p>
                   <p className="text-sm">Email: tawaffallah@gmail.com</p>
                 </div>
                 <div className="text-right">

@@ -223,7 +223,7 @@ export default function ViewInvoicePage() {
             <div className="company-info">
               <h1 className="text-xl font-bold mb-1">SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY</h1>
               <div className="text-lg mb-3">شركة صالح عبدالله المالكي للمقاولات العامة</div>
-              <p className="text-sm mb-1"><strong>VAT:</strong> 312886534600003</p>
+              <p className="text-sm mb-1"><strong>VAT:</strong> 312886354600003</p>
               <p className="text-sm"><strong>Email:</strong> tawaffallah@gmail.com</p>
             </div>
             <div className="text-right">

@@ -551,7 +551,7 @@ export default function PrintInvoicePage() {
           <div className="company-name">SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY</div>
           <div className="company-arabic">شركة صالح عبدالله المالكي للمقاولات العامة</div>
           <div className="company-info-row">
-            <span><strong>VAT:</strong> 312886534600003</span>
+            <span><strong>VAT:</strong> 312886354600003</span>
             <span><strong>Email:</strong> tawaffallah@gmail.com</span>
           </div>
         </div>

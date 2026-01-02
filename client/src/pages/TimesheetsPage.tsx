@@ -89,8 +89,7 @@ export default function TimesheetsPage() {
 
   const bulkSaveMutation = useMutation(
     async (data: { entries: LaborerEntry[], workingDays: number }) => {
-      // Create timesheets for each working day
-      const promises: Promise<any>[] = [];
+      // Create timesheets for each working day - process sequentially to avoid connection issues
       for (let day = 1; day <= data.workingDays && day <= daysInMonth; day++) {
         const date = formatDate(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day));
         const dailyEntries = data.entries
@@ -104,14 +103,13 @@ export default function TimesheetsPage() {
           }));
         
         if (dailyEntries.length > 0) {
-          promises.push(api.post('/timesheets/bulk', {
+          await api.post('/timesheets/bulk', {
             date,
             defaultOvertimeMultiplier: 1.5,
             timesheets: dailyEntries
-          }));
+          });
         }
       }
-      return Promise.all(promises);
     },
     {
       onSuccess: () => {

@@ -337,18 +337,20 @@ export default function PrintInvoicePage() {
           background: #1e3a5f;
           color: white;
           border: 1px solid #1e3a5f;
-          padding: 12px 8px;
+          padding: 8px;
           text-align: center;
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.5px;
           font-size: 10px;
+          vertical-align: middle;
         }
         
         .items-table td {
           border: 1px solid #e2e8f0;
-          padding: 10px 8px;
+          padding: 8px;
           color: #2d3748;
+          vertical-align: middle;
         }
         
         .items-table tbody tr:nth-child(even) {
@@ -382,9 +384,11 @@ export default function PrintInvoicePage() {
         .net-amount {
           background: #1e3a5f;
           color: white;
-          padding: 15px 25px;
+          padding: 12px 25px;
           border-radius: 8px;
-          text-align: center;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         
         .net-amount-label {
@@ -403,10 +407,13 @@ export default function PrintInvoicePage() {
           margin: 25px 0;
           font-size: 12px;
           color: #4a5568;
-          padding: 12px 15px;
+          padding: 10px 15px;
           background: #f7fafc;
           border-left: 4px solid #1e3a5f;
           border-radius: 0 8px 8px 0;
+          display: flex;
+          align-items: center;
+          gap: 5px;
         }
         
         .amount-words strong {
@@ -417,21 +424,21 @@ export default function PrintInvoicePage() {
           margin-top: 35px;
           font-size: 11px;
           color: #4a5568;
-          padding: 15px;
+          padding: 12px 15px;
           background: #f7fafc;
           border-radius: 8px;
           border: 1px solid #e2e8f0;
         }
         
         .bank-details p {
-          margin: 4px 0;
+          margin: 3px 0;
         }
         
         .bank-details p:first-child {
           font-weight: 700;
           color: #1e3a5f;
           font-size: 12px;
-          margin-bottom: 8px;
+          margin-bottom: 6px;
         }
         
         .bank-details .arabic-text {

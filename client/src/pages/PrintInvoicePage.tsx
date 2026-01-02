@@ -40,14 +40,16 @@ export default function PrintInvoicePage() {
     
     try {
       const canvas = await html2canvas(invoiceRef.current, {
-        scale: 2,
+        scale: 4,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
-        logging: false
+        logging: false,
+        imageTimeout: 0,
+        removeContainer: true
       });
       
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -62,7 +64,7 @@ export default function PrintInvoicePage() {
       const imgX = (pdfWidth - imgWidth * ratio) / 2;
       const imgY = 0;
       
-      pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+      pdf.addImage(imgData, 'JPEG', imgX, imgY, imgWidth * ratio, imgHeight * ratio, undefined, 'FAST');
       pdf.save(`invoice-${invoice?.invoiceNumber}.pdf`);
     } catch (error) {
       console.error('Failed to generate PDF:', error);

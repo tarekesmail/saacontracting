@@ -27,6 +27,8 @@ export default function TenantSelectionPage() {
   const [selectingTenant, setSelectingTenant] = useState<string | null>(null);
   const [deletingTenant, setDeletingTenant] = useState<string | null>(null);
   const { user, switchTenant, logout } = useAuth();
+  
+  const isAdmin = user?.role === 'ADMIN';
 
   const {
     register,
@@ -163,95 +165,99 @@ export default function TenantSelectionPage() {
                     </div>
                   </div>
                   
-                  {/* Delete Button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteTenant(tenant.id, tenant.name);
-                    }}
-                    disabled={deletingTenant === tenant.id}
-                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded"
-                    title="Delete Tenant"
-                  >
-                    {deletingTenant === tenant.id ? (
-                      <LoadingSpinner size="sm" />
-                    ) : (
-                      <TrashIcon className="h-4 w-4" />
-                    )}
-                  </button>
+                  {/* Delete Button - Admin only */}
+                  {isAdmin && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteTenant(tenant.id, tenant.name);
+                      }}
+                      disabled={deletingTenant === tenant.id}
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded"
+                      title="Delete Tenant"
+                    >
+                      {deletingTenant === tenant.id ? (
+                        <LoadingSpinner size="sm" />
+                      ) : (
+                        <TrashIcon className="h-4 w-4" />
+                      )}
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* Create New Tenant */}
-        <div className="card p-6">
-          {!showCreateForm ? (
-            <div className="text-center">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Create New Tenant
-              </h3>
-              <p className="text-sm text-gray-500 mb-4">
-                Set up a new tenant for your organization
-              </p>
-              <button
-                onClick={() => setShowCreateForm(true)}
-                className="btn-primary"
-              >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Create Tenant
-              </button>
-            </div>
-          ) : (
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Create New Tenant
-              </h3>
-              <form onSubmit={handleSubmit(createTenant)} className="space-y-4">
-                <div>
-                  <label className="label">Tenant Name</label>
-                  <input
-                    {...register('name')}
-                    type="text"
-                    className="input"
-                    placeholder="e.g., Main Office, Branch 1"
-                  />
-                  {errors.name && (
-                    <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-                  )}
-                </div>
-
-                <div className="flex space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCreateForm(false);
-                      reset();
-                    }}
-                    className="btn-secondary flex-1"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={creatingTenant}
-                    className="btn-primary flex-1"
-                  >
-                    {creatingTenant ? (
-                      <>
-                        <LoadingSpinner size="sm" className="mr-2" />
-                        Creating...
-                      </>
-                    ) : (
-                      'Create & Select'
+        {/* Create New Tenant - Admin only */}
+        {isAdmin && (
+          <div className="card p-6">
+            {!showCreateForm ? (
+              <div className="text-center">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Create New Tenant
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Set up a new tenant for your organization
+                </p>
+                <button
+                  onClick={() => setShowCreateForm(true)}
+                  className="btn-primary"
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Create Tenant
+                </button>
+              </div>
+            ) : (
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  Create New Tenant
+                </h3>
+                <form onSubmit={handleSubmit(createTenant)} className="space-y-4">
+                  <div>
+                    <label className="label">Tenant Name</label>
+                    <input
+                      {...register('name')}
+                      type="text"
+                      className="input"
+                      placeholder="e.g., Main Office, Branch 1"
+                    />
+                    {errors.name && (
+                      <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
                     )}
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-        </div>
+                  </div>
+
+                  <div className="flex space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCreateForm(false);
+                        reset();
+                      }}
+                      className="btn-secondary flex-1"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={creatingTenant}
+                      className="btn-primary flex-1"
+                    >
+                      {creatingTenant ? (
+                        <>
+                          <LoadingSpinner size="sm" className="mr-2" />
+                          Creating...
+                        </>
+                      ) : (
+                        'Create & Select'
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

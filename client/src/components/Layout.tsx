@@ -52,8 +52,8 @@ const navigation = [
     ]
   },
   { name: 'Supplies', href: '/supplies', icon: CubeIcon },
-  { name: 'Tenants', href: '/tenants', icon: Cog6ToothIcon },
-  { name: 'Users', href: '/users', icon: UserGroupIcon },
+  { name: 'Tenants', href: '/tenants', icon: Cog6ToothIcon, adminOnly: true },
+  { name: 'Users', href: '/users', icon: UserGroupIcon, adminOnly: true },
 ];
 
 interface Tenant {
@@ -158,6 +158,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     logout();
   };
 
+  const isAdmin = user?.role === 'ADMIN';
+  
+  // Filter navigation based on user role
+  const filteredNavigation = navigation.filter(item => !item.adminOnly || isAdmin);
+
   const NavigationItem = ({ item }: { item: any }) => {
     if (item.children) {
       const isActive = item.children.some((child: any) => location.pathname === child.href);
@@ -249,7 +254,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
-            {navigation.map((item) => (
+            {filteredNavigation.map((item) => (
               <NavigationItem key={item.name} item={item} />
             ))}
           </nav>
@@ -263,7 +268,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <h1 className="text-xl font-bold text-gray-900">SAA Contracting</h1>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
-            {navigation.map((item) => (
+            {filteredNavigation.map((item) => (
               <NavigationItem key={item.name} item={item} />
             ))}
           </nav>

@@ -2,9 +2,18 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
+import { authenticateToken, AuthRequest } from '../middleware/auth';
 
 const router = express.Router();
 const prisma = new PrismaClient();
+
+// Middleware to require admin role
+const requireAdmin = (req: AuthRequest, res: express.Response, next: express.NextFunction) => {
+  if (req.user?.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  next();
+};
 
 // Login with user authentication
 router.post('/login', async (req, res, next) => {
@@ -26,15 +35,28 @@ router.post('/login', async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // If tenantId provided, verify it exists
+    // Determine which tenant to use
+    let selectedTenantId = tenantId;
+    
+    // If user has a tenant restriction, force that tenant
+    if (user.tenantId) {
+      selectedTenantId = user.tenantId;
+    }
+
+    // If tenantId provided, verify it exists and user has access
     let tenant = null;
-    if (tenantId) {
+    if (selectedTenantId) {
       tenant = await prisma.tenant.findUnique({
-        where: { id: tenantId }
+        where: { id: selectedTenantId }
       });
       
       if (!tenant) {
         return res.status(404).json({ error: 'Tenant not found' });
+      }
+      
+      // Check if user has access to this tenant
+      if (user.tenantId && user.tenantId !== selectedTenantId) {
+        return res.status(403).json({ error: 'You do not have access to this tenant' });
       }
     }
 
@@ -61,6 +83,7 @@ router.post('/login', async (req, res, next) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        tenantRestriction: user.tenantId, // Let frontend know if user has restriction
         tenant: tenant ? {
           id: tenant.id,
           name: tenant.name
@@ -72,9 +95,38 @@ router.post('/login', async (req, res, next) => {
   }
 });
 
-// Get all tenants for selection
-router.get('/tenants', async (req, res, next) => {
+// Get all tenants for selection (requires authentication)
+router.get('/tenants', authenticateToken, async (req: AuthRequest, res, next) => {
   try {
+    const user = req.user!;
+    
+    // Get user's tenant restriction from database
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { tenantId: true, role: true }
+    });
+    
+    // If user has a tenant restriction, only return that tenant
+    if (dbUser?.tenantId) {
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: dbUser.tenantId },
+        include: {
+          _count: {
+            select: {
+              jobs: true,
+              laborers: true
+            }
+          }
+        }
+      });
+      
+      if (tenant) {
+        return res.json([tenant]);
+      }
+      return res.json([]);
+    }
+    
+    // User has access to all tenants
     const tenants = await prisma.tenant.findMany({
       include: {
         _count: {
@@ -92,8 +144,8 @@ router.get('/tenants', async (req, res, next) => {
   }
 });
 
-// Create new tenant
-router.post('/tenants', async (req, res, next) => {
+// Create new tenant (admin only)
+router.post('/tenants', authenticateToken, requireAdmin, async (req: AuthRequest, res, next) => {
   try {
     const { name } = req.body;
 
@@ -111,8 +163,8 @@ router.post('/tenants', async (req, res, next) => {
   }
 });
 
-// Update tenant
-router.put('/tenants/:id', async (req, res, next) => {
+// Update tenant (admin only)
+router.put('/tenants/:id', authenticateToken, requireAdmin, async (req: AuthRequest, res, next) => {
   try {
     const { id } = req.params;
     const { name } = req.body;
@@ -142,8 +194,8 @@ router.put('/tenants/:id', async (req, res, next) => {
   }
 });
 
-// Delete tenant
-router.delete('/tenants/:id', async (req, res, next) => {
+// Delete tenant (admin only)
+router.delete('/tenants/:id', authenticateToken, requireAdmin, async (req: AuthRequest, res, next) => {
   try {
     const { id } = req.params;
 
@@ -183,28 +235,25 @@ router.delete('/tenants/:id', async (req, res, next) => {
 });
 
 // Switch tenant for current user
-router.post('/switch-tenant', async (req, res, next) => {
+router.post('/switch-tenant', authenticateToken, async (req: AuthRequest, res, next) => {
   try {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) {
-      return res.status(401).json({ error: 'Access token required' });
-    }
-
-    // Verify current token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'simple-secret') as any;
+    const user = req.user!;
     
-    // Find the user
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id }
+    // Find the user with tenant restriction
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id }
     });
 
-    if (!user || !user.isActive) {
+    if (!dbUser || !dbUser.isActive) {
       return res.status(401).json({ error: 'Invalid user' });
     }
 
     const { tenantId } = req.body;
+
+    // If user has a tenant restriction, they can only access that tenant
+    if (dbUser.tenantId && tenantId !== dbUser.tenantId) {
+      return res.status(403).json({ error: 'You do not have access to this tenant' });
+    }
 
     // If tenantId provided, verify it exists
     let tenant = null;
@@ -221,11 +270,11 @@ router.post('/switch-tenant', async (req, res, next) => {
     // Create new session token with updated tenant
     const newToken = jwt.sign(
       { 
-        id: user.id,
-        username: user.username,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+        id: dbUser.id,
+        username: dbUser.username,
+        name: dbUser.name,
+        email: dbUser.email,
+        role: dbUser.role,
         tenantId: tenant?.id || null,
         tenantName: tenant?.name || null
       },
@@ -236,11 +285,11 @@ router.post('/switch-tenant', async (req, res, next) => {
     res.json({
       token: newToken,
       user: {
-        id: user.id,
-        username: user.username,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+        id: dbUser.id,
+        username: dbUser.username,
+        name: dbUser.name,
+        email: dbUser.email,
+        role: dbUser.role,
         tenant: tenant ? {
           id: tenant.id,
           name: tenant.name

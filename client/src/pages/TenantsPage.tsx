@@ -30,6 +30,21 @@ export default function TenantsPage() {
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const { user, login } = useAuth();
   const queryClient = useQueryClient();
+  
+  const isAdmin = user?.role === 'ADMIN';
+
+  // Redirect non-admin users
+  if (!isAdmin) {
+    return (
+      <div className="text-center py-12">
+        <BuildingOfficeIcon className="mx-auto h-12 w-12 text-gray-400" />
+        <h3 className="mt-2 text-sm font-medium text-gray-900">Access Denied</h3>
+        <p className="mt-1 text-sm text-gray-500">
+          You need admin privileges to manage tenants.
+        </p>
+      </div>
+    );
+  }
 
   const { data: tenants, isLoading } = useQuery('all-tenants', async () => {
     const response = await api.get('/auth/tenants');

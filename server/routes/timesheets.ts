@@ -363,4 +363,32 @@ router.delete('/:id', requireWriteAccess, async (req: AuthRequest, res, next) =>
   }
 });
 
+// Delete all timesheets for a date range (reset month)
+router.delete('/bulk/range', requireWriteAccess, async (req: AuthRequest, res, next) => {
+  try {
+    const { startDate, endDate } = req.query;
+    
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'Start date and end date are required' });
+    }
+
+    const result = await prisma.timesheet.deleteMany({
+      where: {
+        tenantId: req.user!.tenantId!,
+        date: {
+          gte: new Date(startDate as string + 'T00:00:00.000Z'),
+          lte: new Date(endDate as string + 'T23:59:59.999Z')
+        }
+      }
+    });
+
+    res.json({ 
+      message: `Deleted ${result.count} timesheet records`,
+      count: result.count 
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export { router as timesheetRoutes };

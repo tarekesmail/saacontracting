@@ -17,6 +17,7 @@ import {
   XMarkIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
+  TrashIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
@@ -139,6 +140,28 @@ export default function TimesheetsPage() {
     }
   );
 
+  const resetMonthMutation = useMutation(
+    async () => {
+      const response = await api.delete(`/timesheets/bulk/range?startDate=${startDate}&endDate=${endDate}`);
+      return response.data;
+    },
+    {
+      onSuccess: (data) => {
+        queryClient.invalidateQueries('monthly-timesheets');
+        toast.success(`Deleted ${data.count} timesheet records`);
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.error || 'Failed to reset month');
+      }
+    }
+  );
+
+  const handleResetMonth = () => {
+    if (!confirm(`Are you sure you want to delete ALL timesheet records for ${formatMonthYear(currentMonth)}? This cannot be undone.`)) {
+      return;
+    }
+    resetMonthMutation.mutate();
+  };
 
   // Initialize entries when entering edit mode
   useEffect(() => {
@@ -442,6 +465,15 @@ export default function TimesheetsPage() {
             accept=".xlsx,.xls"
             className="hidden"
           />
+          <button
+            onClick={handleResetMonth}
+            disabled={resetMonthMutation.isLoading || !monthlyTimesheets?.length}
+            className="btn-secondary text-red-600 hover:bg-red-50 disabled:opacity-50"
+            title="Delete all timesheets for this month"
+          >
+            <TrashIcon className="h-4 w-4 mr-2" />
+            Reset Month
+          </button>
           <button
             onClick={() => fileInputRef.current?.click()}
             className="btn-secondary"

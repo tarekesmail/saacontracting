@@ -28,9 +28,19 @@ const invoiceSchema = z.object({
 // Generate ZATCA-compliant QR code
 async function generateZATCAQRCode(invoice: any, tenant: any): Promise<string> {
   // ZATCA QR Code format (TLV - Tag Length Value)
-  const sellerName = Buffer.from(tenant.name, 'utf8');
+  // Use the actual company name, not tenant name
+  const companyName = 'SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY';
+  const sellerName = Buffer.from(companyName, 'utf8');
   const vatNumber = Buffer.from('312886534600003', 'utf8'); // Your VAT number
-  const timestamp = Buffer.from(invoice.issueDate.toISOString(), 'utf8');
+  
+  // Use Riyadh timezone (Asia/Riyadh = UTC+3)
+  const now = new Date();
+  const riyadhOffset = 3 * 60 * 60 * 1000; // UTC+3 in milliseconds
+  const riyadhTime = new Date(now.getTime() + riyadhOffset + (now.getTimezoneOffset() * 60 * 1000));
+  const invoiceDate = new Date(invoice.issueDate);
+  invoiceDate.setUTCHours(riyadhTime.getUTCHours(), riyadhTime.getUTCMinutes(), riyadhTime.getUTCSeconds());
+  const timestamp = Buffer.from(invoiceDate.toISOString(), 'utf8');
+  
   const totalAmount = Buffer.from(invoice.totalAmount.toString(), 'utf8');
   const vatAmount = Buffer.from(invoice.vatAmount.toString(), 'utf8');
 

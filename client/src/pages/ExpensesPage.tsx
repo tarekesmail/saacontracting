@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { api } from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import toast from 'react-hot-toast';
@@ -8,10 +8,10 @@ import {
   TrashIcon,
   CurrencyDollarIcon,
   CalendarIcon,
-  TagIcon,
-  DocumentTextIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CalendarDaysIcon,
   ReceiptPercentIcon,
-  FunnelIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 
@@ -24,11 +24,21 @@ interface ExpenseCategory {
 interface Expense {
   id: string;
   date: string;
-  amount: number; // Ensure this is always a number
+  amount: number;
   description: string;
   notes?: string;
   receipt?: string;
   category: ExpenseCategory;
+}
+
+interface CalendarDay {
+  date: Date;
+  dateStr: string;
+  isCurrentMonth: boolean;
+  isToday: boolean;
+  isSelected: boolean;
+  expenses: Expense[];
+  totalAmount: number;
 }
 
 export default function ExpensesPage() {
@@ -37,7 +47,12 @@ export default function ExpensesPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(true);
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     amount: '',
@@ -46,21 +61,15 @@ export default function ExpensesPage() {
     receipt: '',
     categoryId: ''
   });
-  const [filters, setFilters] = useState({
-    startDate: '',
-    endDate: '',
-    categoryId: ''
-  });
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchCategories();
-    fetchExpenses();
   }, []);
 
   useEffect(() => {
     fetchExpenses();
-  }, [filters]);
+  }, [currentMonth]);
 
   const fetchCategories = async () => {
     try {
@@ -73,10 +82,12 @@ export default function ExpensesPage() {
 
   const fetchExpenses = async () => {
     try {
+      const startDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+      const endDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+      
       const params = new URLSearchParams();
-      if (filters.startDate) params.append('startDate', filters.startDate);
-      if (filters.endDate) params.append('endDate', filters.endDate);
-      if (filters.categoryId) params.append('categoryId', filters.categoryId);
+      params.append('startDate', startDate.toISOString().split('T')[0]);
+      params.append('endDate', endDate.toISOString().split('T')[0]);
 
       const response = await api.get(`/expenses?${params.toString()}`);
       setExpenses(response.data);
@@ -86,6 +97,61 @@ export default function ExpensesPage() {
       setLoading(false);
     }
   };
+
+  // Generate calendar days
+  const calendarDays = useMemo((): CalendarDay[] => {
+    const days: CalendarDay[] = [];
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - startDate.getDay());
+    
+    const endDate = new Date(lastDay);
+    endDate.setDate(endDate.getDate() + (6 - endDate.getDay()));
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Group expenses by date
+    const expensesByDate: { [key: string]: Expense[] } = {};
+    expenses.forEach((expense) => {
+      const dateStr = new Date(expense.date).toISOString().split('T')[0];
+      if (!expensesByDate[dateStr]) {
+        expensesByDate[dateStr] = [];
+      }
+      expensesByDate[dateStr].push(expense);
+    });
+    
+    const current = new Date(startDate);
+    while (current <= endDate) {
+      const dateStr = current.toISOString().split('T')[0];
+      const dayExpenses = expensesByDate[dateStr] || [];
+      days.push({
+        date: new Date(current),
+        dateStr,
+        isCurrentMonth: current.getMonth() === month,
+        isToday: current.getTime() === today.getTime(),
+        isSelected: dateStr === selectedDate,
+        expenses: dayExpenses,
+        totalAmount: dayExpenses.reduce((sum, e) => sum + e.amount, 0)
+      });
+      current.setDate(current.getDate() + 1);
+    }
+    
+    return days;
+  }, [currentMonth, expenses, selectedDate]);
+
+  // Filter expenses for selected date or show all for the month
+  const displayedExpenses = useMemo(() => {
+    if (selectedDate) {
+      return expenses.filter(e => new Date(e.date).toISOString().split('T')[0] === selectedDate);
+    }
+    return expenses;
+  }, [expenses, selectedDate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,7 +209,7 @@ export default function ExpensesPage() {
 
   const resetForm = () => {
     setFormData({
-      date: new Date().toISOString().split('T')[0],
+      date: selectedDate || new Date().toISOString().split('T')[0],
       amount: '',
       description: '',
       notes: '',
@@ -154,15 +220,41 @@ export default function ExpensesPage() {
     setShowForm(false);
   };
 
-  const clearFilters = () => {
-    setFilters({
-      startDate: '',
-      endDate: '',
-      categoryId: ''
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    setCurrentMonth(prev => {
+      const newMonth = new Date(prev);
+      if (direction === 'prev') {
+        newMonth.setMonth(newMonth.getMonth() - 1);
+      } else {
+        newMonth.setMonth(newMonth.getMonth() + 1);
+      }
+      return newMonth;
     });
+    setSelectedDate(null);
   };
 
-  const totalAmount = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const selectDate = (day: CalendarDay) => {
+    if (selectedDate === day.dateStr) {
+      setSelectedDate(null); // Deselect if clicking same date
+    } else {
+      setSelectedDate(day.dateStr);
+    }
+  };
+
+  const handleAddExpenseForDate = (dateStr: string) => {
+    setFormData({
+      ...formData,
+      date: dateStr
+    });
+    setShowForm(true);
+  };
+
+  const formatMonthYear = (date: Date) => {
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  const totalAmount = displayedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const monthlyTotal = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   if (loading) {
     return (
@@ -181,11 +273,13 @@ export default function ExpensesPage() {
         </div>
         <div className="flex items-center space-x-3">
           <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 flex items-center space-x-2"
+            onClick={() => setShowCalendar(!showCalendar)}
+            className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${
+              showCalendar ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
           >
-            <FunnelIcon className="h-5 w-5" />
-            <span>Filters</span>
+            <CalendarDaysIcon className="h-5 w-5" />
+            <span>Calendar</span>
           </button>
           <button
             onClick={() => setShowForm(true)}
@@ -197,89 +291,113 @@ export default function ExpensesPage() {
         </div>
       </div>
 
+      {/* Calendar View */}
+      {showCalendar && (
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          {/* Month Navigation */}
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={() => navigateMonth('prev')}
+              className="p-2 hover:bg-gray-100 rounded-lg"
+            >
+              <ChevronLeftIcon className="h-5 w-5" />
+            </button>
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {formatMonthYear(currentMonth)}
+              </h3>
+              <p className="text-sm text-gray-500">
+                Monthly Total: <span className="font-medium text-primary-600">{monthlyTotal.toLocaleString()} SAR</span>
+              </p>
+            </div>
+            <button
+              onClick={() => navigateMonth('next')}
+              className="p-2 hover:bg-gray-100 rounded-lg"
+            >
+              <ChevronRightIcon className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Day Headers */}
+          <div className="grid grid-cols-7 gap-1 mb-2">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+              <div key={day} className="text-center text-xs font-medium py-2 text-gray-500">
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar Grid */}
+          <div className="grid grid-cols-7 gap-1">
+            {calendarDays.map((day, index) => (
+              <button
+                key={index}
+                onClick={() => selectDate(day)}
+                className={`
+                  relative p-2 text-sm rounded-lg transition-all min-h-[70px] flex flex-col
+                  ${!day.isCurrentMonth ? 'text-gray-300 bg-gray-50' : 'hover:bg-gray-100'}
+                  ${day.isToday ? 'ring-2 ring-primary-500' : ''}
+                  ${day.isSelected ? 'bg-primary-600 text-white hover:bg-primary-700' : ''}
+                `}
+              >
+                <div className="font-medium">{day.date.getDate()}</div>
+                {day.totalAmount > 0 && day.isCurrentMonth && (
+                  <div className={`text-xs mt-auto ${day.isSelected ? 'text-white' : 'text-red-600'}`}>
+                    {day.totalAmount.toLocaleString()}
+                  </div>
+                )}
+                {day.expenses.length > 0 && day.isCurrentMonth && (
+                  <div className={`text-xs ${day.isSelected ? 'text-white/70' : 'text-gray-400'}`}>
+                    {day.expenses.length} item{day.expenses.length > 1 ? 's' : ''}
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Selected Date Info */}
+          {selectedDate && (
+            <div className="mt-4 pt-4 border-t flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">
+                  Showing expenses for: <span className="font-medium">{new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</span>
+                </span>
+                <button
+                  onClick={() => setSelectedDate(null)}
+                  className="text-xs text-primary-600 hover:text-primary-800"
+                >
+                  Show all
+                </button>
+              </div>
+              <button
+                onClick={() => handleAddExpenseForDate(selectedDate)}
+                className="text-sm text-primary-600 hover:text-primary-800 flex items-center"
+              >
+                <PlusIcon className="h-4 w-4 mr-1" />
+                Add expense for this date
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Summary Card */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-medium text-gray-900">Total Expenses</h3>
+            <h3 className="text-lg font-medium text-gray-900">
+              {selectedDate ? 'Daily Total' : 'Monthly Total'}
+            </h3>
             <p className="text-3xl font-bold text-primary-600">
               {totalAmount.toLocaleString()} SAR
             </p>
           </div>
           <div className="text-right">
-            <p className="text-sm text-gray-600">Total Records</p>
-            <p className="text-2xl font-semibold text-gray-900">{expenses.length}</p>
+            <p className="text-sm text-gray-600">Records</p>
+            <p className="text-2xl font-semibold text-gray-900">{displayedExpenses.length}</p>
           </div>
         </div>
       </div>
-
-      {/* Filters */}
-      {showFilters && (
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-medium text-gray-900">Filters</h3>
-            <button
-              onClick={() => setShowFilters(false)}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <XMarkIcon className="h-5 w-5" />
-            </button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Start Date
-              </label>
-              <input
-                type="date"
-                value={filters.startDate}
-                onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                End Date
-              </label>
-              <input
-                type="date"
-                value={filters.endDate}
-                onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category
-              </label>
-              <select
-                value={filters.categoryId}
-                onChange={(e) => setFilters({ ...filters, categoryId: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              >
-                <option value="">All Categories</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="flex items-end">
-              <button
-                onClick={clearFilters}
-                className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-              >
-                Clear Filters
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Form Modal */}
       {showForm && (
@@ -400,14 +518,24 @@ export default function ExpensesPage() {
 
       {/* Expenses List */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        {expenses.length === 0 ? (
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <h3 className="text-lg font-medium text-gray-900">
+            {selectedDate 
+              ? new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+              : formatMonthYear(currentMonth)
+            }
+          </h3>
+          <span className="text-sm text-gray-500">{displayedExpenses.length} expenses</span>
+        </div>
+
+        {displayedExpenses.length === 0 ? (
           <div className="text-center py-12">
             <CurrencyDollarIcon className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">No expenses found</h3>
             <p className="mt-1 text-sm text-gray-500">
-              {Object.values(filters).some(v => v) 
-                ? 'Try adjusting your filters or add a new expense.'
-                : 'Get started by adding your first expense.'
+              {selectedDate 
+                ? 'No expenses recorded for this date.'
+                : 'No expenses recorded for this month.'
               }
             </p>
             <div className="mt-6">
@@ -446,7 +574,7 @@ export default function ExpensesPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {expenses.map((expense) => (
+                {displayedExpenses.map((expense) => (
                   <tr key={expense.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">

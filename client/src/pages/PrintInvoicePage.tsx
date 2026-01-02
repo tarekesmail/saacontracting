@@ -634,12 +634,42 @@ export default function PrintInvoicePage() {
           <thead>
             <tr>
               <th className="col-num">#</th>
-              <th className="col-desc"><div>Description</div><div className="arabic-text">{'\u202B'}الوصف{'\u202C'}</div></th>
-              <th className="col-qty"><div>Qty</div><div className="arabic-text">{'\u202B'}الكمية{'\u202C'}</div></th>
-              <th className="col-rate"><div>Rate</div><div className="arabic-text">{'\u202B'}السعر{'\u202C'}</div></th>
-              <th className="col-amount"><div>Taxable Amount</div><div className="arabic-text">{'\u202B'}المبلغ الخاضع للضريبة{'\u202C'}</div></th>
-              <th className="col-tax"><div>Tax (SAR)</div><div className="arabic-text">{'\u202B'}الضريبة{'\u202C'}</div></th>
-              <th className="col-total"><div>Net Amount</div><div className="arabic-text">{'\u202B'}المبلغ الصافي{'\u202C'}</div></th>
+              <th className="col-desc">
+                <div>Description</div>
+                <svg width="50" height="14" viewBox="0 0 50 14">
+                  <text x="25" y="11" textAnchor="middle" fill="#b8d4f0" fontSize="10" fontFamily="Noto Naskh Arabic, serif" direction="rtl">الوصف</text>
+                </svg>
+              </th>
+              <th className="col-qty">
+                <div>Qty</div>
+                <svg width="40" height="14" viewBox="0 0 40 14">
+                  <text x="20" y="11" textAnchor="middle" fill="#b8d4f0" fontSize="10" fontFamily="Noto Naskh Arabic, serif" direction="rtl">الكمية</text>
+                </svg>
+              </th>
+              <th className="col-rate">
+                <div>Rate</div>
+                <svg width="40" height="14" viewBox="0 0 40 14">
+                  <text x="20" y="11" textAnchor="middle" fill="#b8d4f0" fontSize="10" fontFamily="Noto Naskh Arabic, serif" direction="rtl">السعر</text>
+                </svg>
+              </th>
+              <th className="col-amount">
+                <div>Taxable Amount</div>
+                <svg width="100" height="14" viewBox="0 0 100 14">
+                  <text x="50" y="11" textAnchor="middle" fill="#b8d4f0" fontSize="9" fontFamily="Noto Naskh Arabic, serif" direction="rtl">المبلغ الخاضع للضريبة</text>
+                </svg>
+              </th>
+              <th className="col-tax">
+                <div>Tax (SAR)</div>
+                <svg width="50" height="14" viewBox="0 0 50 14">
+                  <text x="25" y="11" textAnchor="middle" fill="#b8d4f0" fontSize="10" fontFamily="Noto Naskh Arabic, serif" direction="rtl">الضريبة</text>
+                </svg>
+              </th>
+              <th className="col-total">
+                <div>Net Amount</div>
+                <svg width="70" height="14" viewBox="0 0 70 14">
+                  <text x="35" y="11" textAnchor="middle" fill="#b8d4f0" fontSize="10" fontFamily="Noto Naskh Arabic, serif" direction="rtl">المبلغ الصافي</text>
+                </svg>
+              </th>
             </tr>
           </thead>
           <tbody>

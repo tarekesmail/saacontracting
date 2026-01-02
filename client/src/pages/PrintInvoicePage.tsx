@@ -107,8 +107,76 @@ export default function PrintInvoicePage() {
         
         @media print {
           .no-print { display: none !important; }
-          body { margin: 0; padding: 0; }
-          .invoice-page { padding: 0 !important; box-shadow: none !important; }
+          body { 
+            margin: 0; 
+            padding: 0;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .invoice-page { 
+            padding: 20px !important; 
+            box-shadow: none !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          
+          /* Force colors to print */
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          
+          .items-table th {
+            background-color: #1e3a5f !important;
+            color: white !important;
+          }
+          
+          .items-table tbody tr:nth-child(even) {
+            background-color: #f7fafc !important;
+          }
+          
+          .total-row {
+            background-color: #edf2f7 !important;
+          }
+          
+          .net-amount {
+            background-color: #1e3a5f !important;
+            color: white !important;
+          }
+          
+          .amount-words {
+            background-color: #f7fafc !important;
+            border-left: 4px solid #1e3a5f !important;
+          }
+          
+          .bank-details {
+            background-color: #f7fafc !important;
+            border: 1px solid #e2e8f0 !important;
+          }
+          
+          .header-row {
+            border-bottom: 3px solid #1e3a5f !important;
+          }
+          
+          .company-name {
+            color: #1e3a5f !important;
+          }
+          
+          .company-arabic {
+            color: #2d5a87 !important;
+          }
+          
+          .invoice-title {
+            color: #1e3a5f !important;
+          }
+          
+          .invoice-title-arabic {
+            color: #2d5a87 !important;
+          }
+          
+          .section-title {
+            color: #1e3a5f !important;
+          }
         }
         
         * { box-sizing: border-box; }
@@ -304,17 +372,17 @@ export default function PrintInvoicePage() {
         }
         
         .summary-section {
-          text-align: right;
+          display: flex;
+          justify-content: flex-end;
           margin: 25px 0;
         }
         
         .net-amount {
-          display: inline-block;
           background: #1e3a5f;
           color: white;
           padding: 15px 25px;
           border-radius: 8px;
-          min-width: 280px;
+          text-align: center;
         }
         
         .net-amount-label {

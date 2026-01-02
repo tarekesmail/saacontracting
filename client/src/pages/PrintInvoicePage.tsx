@@ -4,6 +4,7 @@ import { api } from '../lib/api';
 import { numberToWords } from '../utils/numberToWords';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { PDFDocument } from 'pdf-lib';
 
 export default function PrintInvoicePage() {
   const { id } = useParams<{ id: string }>();
@@ -52,7 +53,6 @@ export default function PrintInvoicePage() {
         backgroundColor: '#ffffff',
         logging: false,
         imageTimeout: 0,
-        letterRendering: true,
         foreignObjectRendering: true
       });
       
@@ -72,7 +72,33 @@ export default function PrintInvoicePage() {
       const imgY = 0;
       
       pdf.addImage(imgData, 'JPEG', imgX, imgY, imgWidth * ratio, imgHeight * ratio, undefined, 'FAST');
-      pdf.save(`invoice-${invoice?.invoiceNumber}.pdf`);
+      
+      // Convert jsPDF to array buffer
+      const invoicePdfBytes = pdf.output('arraybuffer');
+      
+      // Fetch the additional PDF pages
+      const additionalPdfResponse = await fetch('/invoice_pdf.pdf');
+      const additionalPdfBytes = await additionalPdfResponse.arrayBuffer();
+      
+      // Merge PDFs using pdf-lib
+      const invoicePdfDoc = await PDFDocument.load(invoicePdfBytes);
+      const additionalPdfDoc = await PDFDocument.load(additionalPdfBytes);
+      
+      // Copy all pages from additional PDF to invoice PDF
+      const additionalPages = await invoicePdfDoc.copyPages(additionalPdfDoc, additionalPdfDoc.getPageIndices());
+      additionalPages.forEach(page => invoicePdfDoc.addPage(page));
+      
+      // Save merged PDF
+      const mergedPdfBytes = await invoicePdfDoc.save();
+      
+      // Download merged PDF
+      const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `invoice-${invoice?.invoiceNumber}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Failed to generate PDF:', error);
       alert('Failed to generate PDF. Please try printing instead.');

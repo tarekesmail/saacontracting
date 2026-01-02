@@ -580,7 +580,7 @@ export default function PrintInvoicePage() {
             {invoice.items.map((item: any, index: number) => (
               <tr key={index}>
                 <td className="col-num">{index + 1}</td>
-                <td className="col-desc">{item.description}</td>
+                <td className="col-desc" style={{ whiteSpace: 'pre-line' }}>{item.description}</td>
                 <td className="col-qty">{parseFloat(item.quantity).toFixed(2)}</td>
                 <td className="col-rate">{parseFloat(item.unitPrice).toFixed(2)}</td>
                 <td className="col-amount">{parseFloat(item.lineTotal).toFixed(2)}</td>

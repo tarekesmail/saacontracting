@@ -258,12 +258,12 @@ router.post('/generate-monthly', async (req: AuthRequest, res, next) => {
         subtotal += lineTotal;
         totalVat += vatAmount;
 
-        // Create detailed description
+        // Create detailed description with line breaks
         const itemsList = summary.items.map(item => 
-          `${item.name} (${item.quantity}x ${item.price.toFixed(2)} SAR)`
-        ).join(', ');
+          `${item.name}\n(${item.quantity}× ${item.price.toFixed(2)} SAR)`
+        ).join('\n');
         
-        const description = `${summary.categoryName} Supplies: ${itemsList}`;
+        const description = `${summary.categoryName} Supplies:\n${itemsList}`;
 
         return {
           description,

@@ -279,7 +279,7 @@ export default function ViewInvoicePage() {
                 {invoice.items.map((item: any, index: number) => (
                   <tr key={index}>
                     <td className="border border-black p-2 text-center">{index + 1}</td>
-                    <td className="border border-black p-2">{item.description}</td>
+                    <td className="border border-black p-2" style={{ whiteSpace: 'pre-line' }}>{item.description}</td>
                     <td className="border border-black p-2 text-center">{parseFloat(item.quantity).toFixed(2)}</td>
                     <td className="border border-black p-2 text-right">{parseFloat(item.unitPrice).toFixed(2)}</td>
                     <td className="border border-black p-2 text-right">{parseFloat(item.lineTotal).toFixed(2)}</td>

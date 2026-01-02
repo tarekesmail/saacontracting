@@ -42,16 +42,18 @@ export default function PrintInvoicePage() {
       // Wait for fonts to load
       await document.fonts.ready;
       
+      // Small delay to ensure fonts are rendered
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const canvas = await html2canvas(invoiceRef.current, {
-        scale: 3,
+        scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false,
         imageTimeout: 0,
-        removeContainer: true,
-        windowWidth: invoiceRef.current.scrollWidth,
-        windowHeight: invoiceRef.current.scrollHeight
+        letterRendering: true,
+        foreignObjectRendering: true
       });
       
       const imgData = canvas.toDataURL('image/png', 1.0);
@@ -352,11 +354,13 @@ export default function PrintInvoicePage() {
         
         .items-table th .arabic-text {
           display: block;
+          font-family: 'Noto Naskh Arabic', serif;
           font-size: 10px;
           font-weight: 600;
           text-transform: none;
-          margin-top: 1px;
+          margin-top: 2px;
           direction: rtl;
+          unicode-bidi: embed;
         }
         
         .items-table td {
@@ -564,12 +568,12 @@ export default function PrintInvoicePage() {
           <thead>
             <tr>
               <th className="col-num">#</th>
-              <th className="col-desc">Description<br/><span className="arabic-text" dir="rtl">الوصف</span></th>
-              <th className="col-qty">Qty<br/><span className="arabic-text" dir="rtl">الكمية</span></th>
-              <th className="col-rate">Rate<br/><span className="arabic-text" dir="rtl">السعر</span></th>
-              <th className="col-amount">Taxable Amount<br/><span className="arabic-text" dir="rtl">المبلغ الخاضع للضريبة</span></th>
-              <th className="col-tax">Tax (SAR)<br/><span className="arabic-text" dir="rtl">الضريبة</span></th>
-              <th className="col-total">Net Amount<br/><span className="arabic-text" dir="rtl">المبلغ الصافي</span></th>
+              <th className="col-desc"><div>Description</div><div className="arabic-text">الوصف</div></th>
+              <th className="col-qty"><div>Qty</div><div className="arabic-text">الكمية</div></th>
+              <th className="col-rate"><div>Rate</div><div className="arabic-text">السعر</div></th>
+              <th className="col-amount"><div>Taxable Amount</div><div className="arabic-text">المبلغ الخاضع للضريبة</div></th>
+              <th className="col-tax"><div>Tax (SAR)</div><div className="arabic-text">الضريبة</div></th>
+              <th className="col-total"><div>Net Amount</div><div className="arabic-text">المبلغ الصافي</div></th>
             </tr>
           </thead>
           <tbody>

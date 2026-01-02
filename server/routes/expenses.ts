@@ -25,9 +25,14 @@ router.get('/', async (req: AuthRequest, res, next) => {
     };
 
     if (startDate && endDate) {
+      // Use date strings directly for comparison to avoid timezone issues
+      // Dates are stored at noon UTC to avoid day boundary issues
+      const start = new Date(startDate as string + 'T00:00:00.000Z');
+      const end = new Date(endDate as string + 'T23:59:59.999Z');
+      
       where.date = {
-        gte: new Date(startDate as string),
-        lte: new Date(endDate as string)
+        gte: start,
+        lte: end
       };
     }
 
@@ -102,10 +107,11 @@ router.post('/', requireWriteAccess, async (req: AuthRequest, res, next) => {
       return res.status(400).json({ error: 'Invalid category' });
     }
 
+    // Store date at noon UTC to avoid timezone day boundary issues
     const expense = await prisma.expense.create({
       data: {
         ...data,
-        date: new Date(data.date),
+        date: new Date(data.date + 'T12:00:00.000Z'),
         tenantId: req.user!.tenantId!
       },
       include: {
@@ -143,6 +149,7 @@ router.put('/:id', requireWriteAccess, async (req: AuthRequest, res, next) => {
       return res.status(400).json({ error: 'Invalid category' });
     }
 
+    // Store date at noon UTC to avoid timezone day boundary issues
     const expense = await prisma.expense.updateMany({
       where: {
         id: req.params.id,
@@ -150,7 +157,7 @@ router.put('/:id', requireWriteAccess, async (req: AuthRequest, res, next) => {
       },
       data: {
         ...data,
-        date: new Date(data.date)
+        date: new Date(data.date + 'T12:00:00.000Z')
       }
     });
 

@@ -7,7 +7,7 @@ const router = express.Router();
 const prisma = new PrismaClient();
 
 const timesheetSchema = z.object({
-  date: z.string().transform((str) => new Date(str)),
+  date: z.string().transform((str) => new Date(str + 'T12:00:00.000Z')), // Store at noon UTC
   hoursWorked: z.number().min(0).max(24),
   overtime: z.number().min(0).max(24).default(0),
   overtimeMultiplier: z.number().min(1).max(5).nullable().optional(), // Nullable when no overtime
@@ -17,7 +17,7 @@ const timesheetSchema = z.object({
 });
 
 const bulkTimesheetSchema = z.object({
-  date: z.string().transform((str) => new Date(str)),
+  date: z.string().transform((str) => new Date(str + 'T12:00:00.000Z')), // Store at noon UTC
   defaultOvertimeMultiplier: z.number().min(1).max(5).default(1.5), // Default multiplier for all
   timesheets: z.array(z.object({
     laborerId: z.string().min(1),
@@ -39,13 +39,18 @@ router.get('/', async (req: AuthRequest, res, next) => {
       tenantId: req.user!.tenantId!,
     };
 
-    // Support single date or date range
+    // Support single date or date range - use UTC boundaries to avoid timezone issues
     if (date) {
-      where.date = new Date(date as string);
+      const start = new Date(date as string + 'T00:00:00.000Z');
+      const end = new Date(date as string + 'T23:59:59.999Z');
+      where.date = {
+        gte: start,
+        lte: end
+      };
     } else if (startDate && endDate) {
       where.date = {
-        gte: new Date(startDate as string),
-        lte: new Date(endDate as string)
+        gte: new Date(startDate as string + 'T00:00:00.000Z'),
+        lte: new Date(endDate as string + 'T23:59:59.999Z')
       };
     }
     
@@ -101,8 +106,8 @@ router.get('/summary', async (req: AuthRequest, res, next) => {
       where: {
         tenantId: req.user!.tenantId!,
         date: {
-          gte: new Date(startDate as string),
-          lte: new Date(endDate as string)
+          gte: new Date(startDate as string + 'T00:00:00.000Z'),
+          lte: new Date(endDate as string + 'T23:59:59.999Z')
         }
       },
       _sum: {
@@ -132,8 +137,8 @@ router.get('/summary', async (req: AuthRequest, res, next) => {
       where: {
         tenantId: req.user!.tenantId!,
         date: {
-          gte: new Date(startDate as string),
-          lte: new Date(endDate as string)
+          gte: new Date(startDate as string + 'T00:00:00.000Z'),
+          lte: new Date(endDate as string + 'T23:59:59.999Z')
         },
         overtime: { gt: 0 }
       },

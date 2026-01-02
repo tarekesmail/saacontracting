@@ -289,28 +289,38 @@ export default function TimesheetsPage() {
         let nameColIndex = -1;
         let hoursColIndex = -1;
 
+        // Search first 10 rows for headers
         for (let i = 0; i < Math.min(10, jsonData.length); i++) {
           const row = jsonData[i];
           if (!row) continue;
           
           for (let j = 0; j < row.length; j++) {
-            const cell = String(row[j] || '').toLowerCase();
-            if (cell.includes('iqama') || cell.includes('no')) {
+            const cell = String(row[j] || '').toLowerCase().trim();
+            
+            // Match IQAMA column - look for "iqama" anywhere in the cell
+            if (cell.includes('iqama')) {
               iqamaColIndex = j;
               headerRowIndex = i;
             }
-            if (cell.includes('姓名') || cell.includes('name')) {
+            
+            // Match name column
+            if (cell.includes('姓名') || cell === 'name' || cell.includes('name')) {
               nameColIndex = j;
             }
-            if (cell.includes('总工时') || cell.includes('hours') || cell.includes('工时')) {
+            
+            // Match hours column - 总工时 or contains "工时" or "hours"
+            if (cell.includes('总工时') || cell.includes('工时') || cell.includes('hours') || cell.includes('hour')) {
               hoursColIndex = j;
             }
           }
-          if (headerRowIndex >= 0) break;
         }
 
+        // Debug: log what we found
+        console.log('Excel parsing:', { headerRowIndex, iqamaColIndex, nameColIndex, hoursColIndex });
+        console.log('First few rows:', jsonData.slice(0, 5));
+
         if (iqamaColIndex === -1 || hoursColIndex === -1) {
-          toast.error('Could not find IQAMA NO or Hours columns in the Excel file');
+          toast.error('Could not find IQAMA NO or Hours (总工时) columns in the Excel file');
           return;
         }
 

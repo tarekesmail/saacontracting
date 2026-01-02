@@ -103,27 +103,33 @@ export default function PrintInvoicePage() {
           // Load the additional PDF
           const additionalPdfDoc = await PDFDocument.load(additionalPdfBytes);
           
-          // Create a new PDF and embed the invoice image as first page
+          // Create a new PDF
           const mergedPdf = await PDFDocument.create();
           
-          // Add invoice page with the image
-          const invoicePage = mergedPdf.addPage([595.28, 841.89]); // A4 size in points
-          const pngImage = await mergedPdf.embedPng(imgData);
+          // Add invoice page with the canvas image
+          const a4Width = 595.28;
+          const a4Height = 841.89;
+          const invoicePage = mergedPdf.addPage([a4Width, a4Height]);
           
-          // Scale image to fit A4 page with margins
-          const pageWidth = invoicePage.getWidth();
-          const pageHeight = invoicePage.getHeight();
+          // Convert canvas data URL to bytes
+          const pngDataUrl = imgData;
+          const pngBytes = Uint8Array.from(atob(pngDataUrl.split(',')[1]), c => c.charCodeAt(0));
+          const pngImage = await mergedPdf.embedPng(pngBytes);
+          
+          // Calculate scale to fit page
           const imgDims = pngImage.scale(1);
           const scale = Math.min(
-            (pageWidth - 20) / imgDims.width,
-            (pageHeight - 20) / imgDims.height
+            a4Width / imgDims.width,
+            a4Height / imgDims.height
           );
+          const scaledWidth = imgDims.width * scale;
+          const scaledHeight = imgDims.height * scale;
           
           invoicePage.drawImage(pngImage, {
-            x: (pageWidth - imgDims.width * scale) / 2,
-            y: pageHeight - imgDims.height * scale - 10,
-            width: imgDims.width * scale,
-            height: imgDims.height * scale,
+            x: (a4Width - scaledWidth) / 2,
+            y: a4Height - scaledHeight,
+            width: scaledWidth,
+            height: scaledHeight,
           });
           
           // Copy additional PDF pages

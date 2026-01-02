@@ -43,16 +43,27 @@ export default function PrintInvoicePage() {
       // Wait for fonts to load
       await document.fonts.ready;
       
+      // Scroll to top to ensure full capture
+      window.scrollTo(0, 0);
+      
       // Small delay to ensure fonts are rendered
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      const canvas = await html2canvas(invoiceRef.current, {
+      const element = invoiceRef.current;
+      
+      const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false,
-        imageTimeout: 0
+        imageTimeout: 0,
+        width: element.scrollWidth,
+        height: element.scrollHeight,
+        x: 0,
+        y: 0,
+        scrollX: 0,
+        scrollY: 0
       });
       
       const imgData = canvas.toDataURL('image/png', 1.0);

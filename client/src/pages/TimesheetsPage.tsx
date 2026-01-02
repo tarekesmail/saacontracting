@@ -1,7 +1,8 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { api } from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
+import * as XLSX from 'xlsx';
 import { 
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -12,6 +13,10 @@ import {
   UserGroupIcon,
   PencilIcon,
   DocumentTextIcon,
+  ArrowUpTrayIcon,
+  XMarkIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
@@ -54,6 +59,15 @@ interface LaborerSummary {
   profit: number;
 }
 
+interface ImportedRow {
+  iqamaNo: string;
+  name: string;
+  hours: number;
+  matched: boolean;
+  laborerId?: string;
+  laborerName?: string;
+}
+
 export default function TimesheetsPage() {
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date();
@@ -64,7 +78,10 @@ export default function TimesheetsPage() {
   const [editMode, setEditMode] = useState(false);
   const [entries, setEntries] = useState<LaborerEntry[]>([]);
   const [workingDays, setWorkingDays] = useState(26);
-  const [defaultHoursPerDay, setDefaultHoursPerDay] = useState(10);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importedData, setImportedData] = useState<ImportedRow[]>([]);
+  const [importStats, setImportStats] = useState({ matched: 0, unmatched: 0, total: 0 });
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
   const formatDate = (d: Date) => 
@@ -89,7 +106,6 @@ export default function TimesheetsPage() {
 
   const bulkSaveMutation = useMutation(
     async (data: { entries: LaborerEntry[], workingDays: number }) => {
-      // Create timesheets for each working day - process sequentially to avoid connection issues
       for (let day = 1; day <= data.workingDays && day <= daysInMonth; day++) {
         const date = formatDate(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day));
         const dailyEntries = data.entries
@@ -128,7 +144,6 @@ export default function TimesheetsPage() {
   useEffect(() => {
     if (editMode && laborers) {
       const newEntries = laborers.map(laborer => {
-        // Find existing data for this laborer
         const existingData = laborerSummaries.find(s => s.laborer.id === laborer.id);
         return {
           laborerId: laborer.id,
@@ -254,6 +269,145 @@ export default function TimesheetsPage() {
     return entries.find(e => e.laborerId === laborerId) || { laborerId, jobId: '', totalHours: 0, overtime: 0, overtimeMultiplier: 1.5 };
   };
 
+  // Excel Import Functions
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+
+        // Find header row and column indices
+        let headerRowIndex = -1;
+        let iqamaColIndex = -1;
+        let nameColIndex = -1;
+        let hoursColIndex = -1;
+
+        for (let i = 0; i < Math.min(10, jsonData.length); i++) {
+          const row = jsonData[i];
+          if (!row) continue;
+          
+          for (let j = 0; j < row.length; j++) {
+            const cell = String(row[j] || '').toLowerCase();
+            if (cell.includes('iqama') || cell.includes('no')) {
+              iqamaColIndex = j;
+              headerRowIndex = i;
+            }
+            if (cell.includes('姓名') || cell.includes('name')) {
+              nameColIndex = j;
+            }
+            if (cell.includes('总工时') || cell.includes('hours') || cell.includes('工时')) {
+              hoursColIndex = j;
+            }
+          }
+          if (headerRowIndex >= 0) break;
+        }
+
+        if (iqamaColIndex === -1 || hoursColIndex === -1) {
+          toast.error('Could not find IQAMA NO or Hours columns in the Excel file');
+          return;
+        }
+
+        // Parse data rows and aggregate by IQAMA
+        const hoursMap = new Map<string, { name: string; hours: number }>();
+        
+        for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
+          const row = jsonData[i];
+          if (!row) continue;
+
+          const iqamaNo = String(row[iqamaColIndex] || '').trim();
+          const name = nameColIndex >= 0 ? String(row[nameColIndex] || '').trim() : '';
+          const hours = parseFloat(String(row[hoursColIndex] || '0')) || 0;
+
+          if (!iqamaNo || hours <= 0) continue;
+
+          // Aggregate hours for duplicate IQAMA numbers
+          if (hoursMap.has(iqamaNo)) {
+            const existing = hoursMap.get(iqamaNo)!;
+            existing.hours += hours;
+          } else {
+            hoursMap.set(iqamaNo, { name, hours });
+          }
+        }
+
+        // Match with laborers
+        const imported: ImportedRow[] = [];
+        let matched = 0;
+        let unmatched = 0;
+
+        hoursMap.forEach((data, iqamaNo) => {
+          const laborer = laborers?.find(l => l.idNumber === iqamaNo);
+          if (laborer) {
+            imported.push({
+              iqamaNo,
+              name: data.name,
+              hours: data.hours,
+              matched: true,
+              laborerId: laborer.id,
+              laborerName: laborer.name,
+            });
+            matched++;
+          } else {
+            imported.push({
+              iqamaNo,
+              name: data.name,
+              hours: data.hours,
+              matched: false,
+            });
+            unmatched++;
+          }
+        });
+
+        // Sort: matched first, then unmatched
+        imported.sort((a, b) => {
+          if (a.matched && !b.matched) return -1;
+          if (!a.matched && b.matched) return 1;
+          return 0;
+        });
+
+        setImportedData(imported);
+        setImportStats({ matched, unmatched, total: matched + unmatched });
+        setShowImportModal(true);
+      } catch (error) {
+        console.error('Error parsing Excel:', error);
+        toast.error('Failed to parse Excel file');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const applyImportedData = () => {
+    if (!laborers) return;
+
+    // Create new entries with imported hours (only matched ones)
+    const newEntries = laborers.map(laborer => {
+      const imported = importedData.find(d => d.matched && d.laborerId === laborer.id);
+      return {
+        laborerId: laborer.id,
+        jobId: laborer.jobId,
+        totalHours: imported?.hours || 0,
+        overtime: 0,
+        overtimeMultiplier: 1.5,
+      };
+    });
+
+    setEntries(newEntries);
+    setEditMode(true);
+    setShowImportModal(false);
+    toast.success(`Imported ${importStats.matched} laborers. ${importStats.unmatched} skipped (not found).`);
+  };
+
   if (loadingLaborers || loadingTimesheets) {
     return <div className="flex items-center justify-center h-64"><LoadingSpinner size="lg" /></div>;
   }
@@ -269,13 +423,30 @@ export default function TimesheetsPage() {
             {editMode ? 'Enter total hours for the month' : 'View hours worked for all laborers'}
           </p>
         </div>
-        <button
-          onClick={() => setEditMode(!editMode)}
-          className={editMode ? 'btn-secondary' : 'btn-primary'}
-        >
-          <PencilIcon className="h-4 w-4 mr-2" />
-          {editMode ? 'Cancel Edit' : 'Edit Hours'}
-        </button>
+        <div className="flex space-x-2">
+          {/* Hidden file input */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            accept=".xlsx,.xls"
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="btn-secondary"
+          >
+            <ArrowUpTrayIcon className="h-4 w-4 mr-2" />
+            Import Excel
+          </button>
+          <button
+            onClick={() => setEditMode(!editMode)}
+            className={editMode ? 'btn-secondary' : 'btn-primary'}
+          >
+            <PencilIcon className="h-4 w-4 mr-2" />
+            {editMode ? 'Cancel Edit' : 'Edit Hours'}
+          </button>
+        </div>
       </div>
 
       {/* Month Navigation */}
@@ -309,10 +480,10 @@ export default function TimesheetsPage() {
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-500">Quick Set:</span>
               <button onClick={() => setAllHours(workingDays * 10)} className="btn-secondary text-sm py-1">
-                All {workingDays * 10}h ({workingDays}d × 10h)
+                All {workingDays * 10}h
               </button>
               <button onClick={() => setAllHours(workingDays * 8)} className="btn-secondary text-sm py-1">
-                All {workingDays * 8}h ({workingDays}d × 8h)
+                All {workingDays * 8}h
               </button>
               <button onClick={() => setAllHours(0)} className="btn-secondary text-sm py-1">Clear</button>
             </div>
@@ -547,6 +718,94 @@ export default function TimesheetsPage() {
           </div>
         )}
       </div>
+
+
+      {/* Import Preview Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg w-full max-w-3xl max-h-[90vh] overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-semibold">Import Preview</h3>
+                <p className="text-sm text-gray-500">Review imported data before applying</p>
+              </div>
+              <button onClick={() => setShowImportModal(false)} className="text-gray-400 hover:text-gray-600">
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Stats */}
+            <div className="px-6 py-4 bg-gray-50 border-b flex gap-6">
+              <div className="flex items-center space-x-2">
+                <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                <span className="text-sm"><strong>{importStats.matched}</strong> matched</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <ExclamationTriangleIcon className="h-5 w-5 text-yellow-500" />
+                <span className="text-sm"><strong>{importStats.unmatched}</strong> not found (will be skipped)</span>
+              </div>
+              <div className="text-sm text-gray-500">
+                Total: {importStats.total} entries
+              </div>
+            </div>
+
+            {/* Data Table */}
+            <div className="overflow-y-auto max-h-[400px]">
+              <table className="w-full">
+                <thead className="bg-gray-50 sticky top-0">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Status</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">IQAMA NO</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Excel Name</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">System Name</th>
+                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Hours</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {importedData.map((row, index) => (
+                    <tr key={index} className={row.matched ? 'bg-green-50' : 'bg-yellow-50'}>
+                      <td className="px-4 py-2">
+                        {row.matched ? (
+                          <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <ExclamationTriangleIcon className="h-5 w-5 text-yellow-500" />
+                        )}
+                      </td>
+                      <td className="px-4 py-2 text-sm font-mono">{row.iqamaNo}</td>
+                      <td className="px-4 py-2 text-sm">{row.name}</td>
+                      <td className="px-4 py-2 text-sm">
+                        {row.matched ? (
+                          <span className="text-green-700">{row.laborerName}</span>
+                        ) : (
+                          <span className="text-yellow-700 italic">Not found</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-right font-medium">{row.hours}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Actions */}
+            <div className="px-6 py-4 border-t bg-gray-50 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={applyImportedData}
+                disabled={importStats.matched === 0}
+                className="btn-primary"
+              >
+                Apply {importStats.matched} Matched Entries
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -72,8 +72,12 @@ app.get('/favicon.ico', (req, res) => {
 // Serve static files from React build
 app.use(express.static(path.join(__dirname, '../../dist/client')));
 
-// Catch all handler for React Router
-app.get('*', (req, res) => {
+// Catch all handler for React Router - only for non-file requests
+app.get('*', (req, res, next) => {
+  // If the request looks like a file (has extension), let it 404
+  if (req.path.includes('.') && !req.path.endsWith('.html')) {
+    return res.status(404).send('File not found');
+  }
   res.sendFile(path.join(__dirname, '../../dist/client/index.html'));
 });
 

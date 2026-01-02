@@ -103,6 +103,8 @@ export default function PrintInvoicePage() {
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap');
+        
         @media print {
           .no-print { display: none !important; }
           body { margin: 0; padding: 0; }
@@ -116,6 +118,10 @@ export default function PrintInvoicePage() {
           margin: 0;
           padding: 0;
           background: #f5f5f5;
+        }
+        
+        .arabic-text {
+          font-family: 'Noto Naskh Arabic', serif;
         }
         
         .invoice-page {
@@ -153,9 +159,11 @@ export default function PrintInvoicePage() {
         }
         
         .company-arabic {
-          font-size: 16px;
+          font-family: 'Noto Naskh Arabic', serif;
+          font-size: 18px;
           margin: 0 0 10px 0;
           direction: rtl;
+          font-weight: 600;
         }
         
         .company-details {
@@ -170,8 +178,10 @@ export default function PrintInvoicePage() {
         }
         
         .invoice-title-arabic {
-          font-size: 16px;
+          font-family: 'Noto Naskh Arabic', serif;
+          font-size: 18px;
           direction: rtl;
+          font-weight: 600;
         }
         
         .details-row {
@@ -289,6 +299,10 @@ export default function PrintInvoicePage() {
           margin: 3px 0;
         }
         
+        .bank-details .arabic-text {
+          font-family: 'Noto Naskh Arabic', serif;
+        }
+        
         .action-buttons {
           position: fixed;
           top: 20px;
@@ -323,6 +337,11 @@ export default function PrintInvoicePage() {
         
         .btn-pdf:hover {
           background: #1e7e34;
+        }
+        
+        .btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
       `}</style>
 
@@ -426,7 +445,7 @@ export default function PrintInvoicePage() {
           <p><strong>Bank Details:</strong></p>
           <p>Account Number: 379000100006865704167</p>
           <p>IBAN Number: SA6600003790001000068657041</p>
-          <p>Al rajhi Bank مصرف الراجحي للاستثمار</p>
+          <p>Al rajhi Bank <span className="arabic-text">مصرف الراجحي للاستثمار</span></p>
           <p>SALEH ABDULLAH AL-MALKI GENERAL CONTRACTING COMPANY</p>
         </div>
       </div>

@@ -116,10 +116,11 @@ export default function ExpensesPage() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    // Group expenses by date
+    // Group expenses by date (using local date to avoid timezone issues)
     const expensesByDate: { [key: string]: Expense[] } = {};
     expenses.forEach((expense) => {
-      const dateStr = new Date(expense.date).toISOString().split('T')[0];
+      const expenseDate = new Date(expense.date);
+      const dateStr = `${expenseDate.getFullYear()}-${String(expenseDate.getMonth() + 1).padStart(2, '0')}-${String(expenseDate.getDate()).padStart(2, '0')}`;
       if (!expensesByDate[dateStr]) {
         expensesByDate[dateStr] = [];
       }
@@ -148,7 +149,12 @@ export default function ExpensesPage() {
   // Filter expenses for selected date or show all for the month
   const displayedExpenses = useMemo(() => {
     if (selectedDate) {
-      return expenses.filter(e => new Date(e.date).toISOString().split('T')[0] === selectedDate);
+      return expenses.filter(e => {
+        // Use local date comparison to avoid timezone issues
+        const expenseDate = new Date(e.date);
+        const localDateStr = `${expenseDate.getFullYear()}-${String(expenseDate.getMonth() + 1).padStart(2, '0')}-${String(expenseDate.getDate()).padStart(2, '0')}`;
+        return localDateStr === selectedDate;
+      });
     }
     return expenses;
   }, [expenses, selectedDate]);

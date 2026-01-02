@@ -1,15 +1,15 @@
 import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer';
 
-// Register fonts - using system fonts that support Arabic
+// Register Noto Naskh Arabic font
 Font.register({
-  family: 'Noto Sans Arabic',
-  src: 'https://fonts.gstatic.com/s/notosansarabic/v18/nwpxtLGrOAZMl5nJ_wfgRg3DrWFZWsnVBJ_sS6tlqHHFlhQ5l3sQWIHPqzCfyGyvu3CBFQLaig.ttf',
+  family: 'Noto Naskh Arabic',
+  src: 'https://fonts.gstatic.com/s/notonaskharabic/v33/RrQ5bpV-9Dd1b1OAGA6M9PkyDuVBePeKNaxcsss0Y7bwvc5krK0z9_Mnuw.ttf',
   fontWeight: 'normal',
 });
 
 Font.register({
-  family: 'Noto Sans Arabic',
-  src: 'https://fonts.gstatic.com/s/notosansarabic/v18/nwpxtLGrOAZMl5nJ_wfgRg3DrWFZWsnVBJ_sS6tlqHHFlhQ5l3sQWIHPqzCf-G-vu3CBFQLaig.ttf',
+  family: 'Noto Naskh Arabic',
+  src: 'https://fonts.gstatic.com/s/notonaskharabic/v33/RrQ5bpV-9Dd1b1OAGA6M9PkyDuVBePeKNaxcsss0Y7bwj89krK0z9_Mnuw.ttf',
   fontWeight: 'bold',
 });
 
@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
   },
   companyArabic: {
     fontSize: 12,
-    fontFamily: 'Noto Sans Arabic',
+    fontFamily: 'Noto Naskh Arabic',
     color: '#2d5a87',
     marginBottom: 6,
     textAlign: 'center',
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
   },
   invoiceTitleArabic: {
     fontSize: 14,
-    fontFamily: 'Noto Sans Arabic',
+    fontFamily: 'Noto Naskh Arabic',
     color: '#2d5a87',
     textAlign: 'center',
   },
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
   },
   tableHeaderArabic: {
     fontSize: 7,
-    fontFamily: 'Noto Sans Arabic',
+    fontFamily: 'Noto Naskh Arabic',
     color: '#b8d4f0',
     marginTop: 2,
     textAlign: 'center',
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   bankDetailsArabic: {
-    fontFamily: 'Noto Sans Arabic',
+    fontFamily: 'Noto Naskh Arabic',
   },
   // Column widths
   colNum: { width: '5%' },

@@ -83,13 +83,10 @@ export default function PrintInvoicePage() {
       
       pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
       
-      // Convert jsPDF to array buffer
-      const invoicePdfBytes = pdf.output('arraybuffer');
-      
-      let finalPdfBytes: Uint8Array;
+      let finalPdfBytes: ArrayBuffer;
       
       try {
-        // Fetch the additional PDF pages - use full URL
+        // Fetch the additional PDF pages
         const pdfUrl = `${window.location.origin}/invoice_pdf.pdf`;
         console.log('Fetching additional PDF from:', pdfUrl);
         
@@ -100,55 +97,38 @@ export default function PrintInvoicePage() {
           const additionalPdfBytes = await additionalPdfResponse.arrayBuffer();
           console.log('Additional PDF size:', additionalPdfBytes.byteLength);
           
-          // Load the additional PDF
+          // Load the additional PDF to get page count
           const additionalPdfDoc = await PDFDocument.load(additionalPdfBytes);
+          const pageCount = additionalPdfDoc.getPageCount();
+          console.log('Additional PDF pages:', pageCount);
           
-          // Create a new PDF
+          // Get the jsPDF output as arraybuffer
+          const invoicePdfBytes = pdf.output('arraybuffer');
+          
+          // Load invoice PDF and additional PDF
+          const invoicePdfDoc = await PDFDocument.load(invoicePdfBytes);
+          
+          // Create merged PDF
           const mergedPdf = await PDFDocument.create();
           
-          // Add invoice page with the canvas image
-          const a4Width = 595.28;
-          const a4Height = 841.89;
-          const invoicePage = mergedPdf.addPage([a4Width, a4Height]);
+          // Copy all pages from invoice
+          const invoicePages = await mergedPdf.copyPages(invoicePdfDoc, invoicePdfDoc.getPageIndices());
+          invoicePages.forEach(page => mergedPdf.addPage(page));
           
-          // Convert canvas data URL to bytes
-          const pngDataUrl = imgData;
-          const pngBytes = Uint8Array.from(atob(pngDataUrl.split(',')[1]), c => c.charCodeAt(0));
-          const pngImage = await mergedPdf.embedPng(pngBytes);
-          
-          // Calculate scale to fit page
-          const imgDims = pngImage.scale(1);
-          const scale = Math.min(
-            a4Width / imgDims.width,
-            a4Height / imgDims.height
-          );
-          const scaledWidth = imgDims.width * scale;
-          const scaledHeight = imgDims.height * scale;
-          
-          invoicePage.drawImage(pngImage, {
-            x: (a4Width - scaledWidth) / 2,
-            y: a4Height - scaledHeight,
-            width: scaledWidth,
-            height: scaledHeight,
-          });
-          
-          // Copy additional PDF pages
+          // Copy all pages from additional PDF
           const additionalPages = await mergedPdf.copyPages(additionalPdfDoc, additionalPdfDoc.getPageIndices());
           additionalPages.forEach(page => mergedPdf.addPage(page));
           
-          console.log('Merged PDF pages:', mergedPdf.getPageCount());
+          console.log('Merged PDF total pages:', mergedPdf.getPageCount());
           
-          // Save merged PDF
           finalPdfBytes = await mergedPdf.save();
         } else {
-          // If additional PDF not found, just use the invoice PDF
-          console.warn('Additional PDF not found (status:', additionalPdfResponse.status, '), using invoice only');
-          finalPdfBytes = new Uint8Array(invoicePdfBytes);
+          console.warn('Additional PDF not found, using invoice only');
+          finalPdfBytes = pdf.output('arraybuffer');
         }
       } catch (mergeError) {
-        // If merge fails, just use the invoice PDF
         console.error('PDF merge failed:', mergeError);
-        finalPdfBytes = new Uint8Array(invoicePdfBytes);
+        finalPdfBytes = pdf.output('arraybuffer');
       }
       
       // Download PDF
@@ -654,12 +634,12 @@ export default function PrintInvoicePage() {
           <thead>
             <tr>
               <th className="col-num">#</th>
-              <th className="col-desc"><div>Description</div><div className="arabic-text">الوصف</div></th>
-              <th className="col-qty"><div>Qty</div><div className="arabic-text">الكمية</div></th>
-              <th className="col-rate"><div>Rate</div><div className="arabic-text">السعر</div></th>
-              <th className="col-amount"><div>Taxable Amount</div><div className="arabic-text">المبلغ الخاضع للضريبة</div></th>
-              <th className="col-tax"><div>Tax (SAR)</div><div className="arabic-text">الضريبة</div></th>
-              <th className="col-total"><div>Net Amount</div><div className="arabic-text">المبلغ الصافي</div></th>
+              <th className="col-desc"><div>Description</div><div className="arabic-text">{'\u202B'}الوصف{'\u202C'}</div></th>
+              <th className="col-qty"><div>Qty</div><div className="arabic-text">{'\u202B'}الكمية{'\u202C'}</div></th>
+              <th className="col-rate"><div>Rate</div><div className="arabic-text">{'\u202B'}السعر{'\u202C'}</div></th>
+              <th className="col-amount"><div>Taxable Amount</div><div className="arabic-text">{'\u202B'}المبلغ الخاضع للضريبة{'\u202C'}</div></th>
+              <th className="col-tax"><div>Tax (SAR)</div><div className="arabic-text">{'\u202B'}الضريبة{'\u202C'}</div></th>
+              <th className="col-total"><div>Net Amount</div><div className="arabic-text">{'\u202B'}المبلغ الصافي{'\u202C'}</div></th>
             </tr>
           </thead>
           <tbody>

@@ -547,10 +547,18 @@ router.get('/:id/pdf', async (req: AuthRequest, res, next) => {
     // Generate HTML content that matches the print version exactly
     const htmlContent = generateInvoiceHTML(invoice);
 
-    // Launch Puppeteer
+    // Launch Puppeteer with system Chromium
     const browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-software-rasterizer',
+        '--font-render-hinting=none'
+      ]
     });
 
     const page = await browser.newPage();

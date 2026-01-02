@@ -29,12 +29,24 @@ FROM node:18-slim AS production
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies including Chromium for Puppeteer
 RUN apt-get update && apt-get install -y \
     openssl \
     ca-certificates \
     dumb-init \
+    chromium \
+    fonts-liberation \
+    fonts-noto-cjk \
+    fonts-noto-color-emoji \
+    fonts-freefont-ttf \
+    fonts-dejavu-core \
+    fonts-arabeyes \
+    --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
+
+# Set Puppeteer environment variables to use system Chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # Copy package files and install production dependencies
 COPY package*.json ./

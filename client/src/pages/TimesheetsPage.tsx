@@ -74,7 +74,10 @@ export default function TimesheetsPage() {
     async () => {
       const startDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
       const endDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-      const response = await api.get(`/timesheets?startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}&limit=10000`);
+      // Format dates using local timezone to avoid UTC conversion issues
+      const formatDate = (d: Date) => 
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const response = await api.get(`/timesheets?startDate=${formatDate(startDate)}&endDate=${formatDate(endDate)}&limit=10000`);
       return response.data.timesheets;
     }
   );

@@ -25,14 +25,10 @@ router.get('/', async (req: AuthRequest, res, next) => {
     };
 
     if (startDate && endDate) {
-      // Use date strings directly for comparison to avoid timezone issues
-      // Dates are stored at noon UTC to avoid day boundary issues
-      const start = new Date(startDate as string + 'T00:00:00.000Z');
-      const end = new Date(endDate as string + 'T23:59:59.999Z');
-      
+      // For DATE columns, use simple date comparison without time component
       where.date = {
-        gte: start,
-        lte: end
+        gte: new Date(startDate as string),
+        lte: new Date(endDate as string)
       };
     }
 

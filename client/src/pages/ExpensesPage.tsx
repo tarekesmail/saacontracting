@@ -85,9 +85,13 @@ export default function ExpensesPage() {
       const startDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
       const endDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
       
+      // Format dates using local timezone to avoid UTC conversion issues
+      const formatDate = (d: Date) => 
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      
       const params = new URLSearchParams();
-      params.append('startDate', startDate.toISOString().split('T')[0]);
-      params.append('endDate', endDate.toISOString().split('T')[0]);
+      params.append('startDate', formatDate(startDate));
+      params.append('endDate', formatDate(endDate));
 
       const response = await api.get(`/expenses?${params.toString()}`);
       setExpenses(response.data);

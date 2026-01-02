@@ -103,21 +103,22 @@ export default function PrintInvoicePage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap');
         
         @media print {
           .no-print { display: none !important; }
           body { margin: 0; padding: 0; }
-          .invoice-page { padding: 0 !important; }
+          .invoice-page { padding: 0 !important; box-shadow: none !important; }
         }
         
         * { box-sizing: border-box; }
         
         body {
-          font-family: Arial, sans-serif;
+          font-family: 'Inter', sans-serif;
           margin: 0;
           padding: 0;
-          background: #f5f5f5;
+          background: #f0f2f5;
+          color: #1a1a2e;
         }
         
         .arabic-text {
@@ -127,15 +128,18 @@ export default function PrintInvoicePage() {
         .invoice-page {
           max-width: 800px;
           margin: 0 auto;
-          padding: 20px;
+          padding: 40px;
           background: white;
           min-height: 100vh;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         
         .header-row {
           display: table;
           width: 100%;
-          margin-bottom: 25px;
+          margin-bottom: 30px;
+          padding-bottom: 20px;
+          border-bottom: 3px solid #1e3a5f;
         }
         
         .company-section {
@@ -152,42 +156,54 @@ export default function PrintInvoicePage() {
         }
         
         .company-name {
-          font-size: 18px;
-          font-weight: bold;
-          margin: 0 0 5px 0;
+          font-size: 20px;
+          font-weight: 700;
+          margin: 0 0 8px 0;
           line-height: 1.3;
+          color: #1e3a5f;
+          letter-spacing: -0.5px;
         }
         
         .company-arabic {
           font-family: 'Noto Naskh Arabic', serif;
           font-size: 18px;
-          margin: 0 0 10px 0;
+          margin: 0 0 12px 0;
           direction: rtl;
           font-weight: 600;
+          color: #2d5a87;
         }
         
         .company-details {
-          font-size: 11px;
-          margin: 3px 0;
+          font-size: 12px;
+          margin: 4px 0;
+          color: #4a5568;
+        }
+        
+        .company-details strong {
+          color: #1e3a5f;
+          font-weight: 600;
         }
         
         .invoice-title {
-          font-size: 20px;
-          font-weight: bold;
+          font-size: 28px;
+          font-weight: 700;
           margin: 0 0 5px 0;
+          color: #1e3a5f;
+          letter-spacing: -0.5px;
         }
         
         .invoice-title-arabic {
           font-family: 'Noto Naskh Arabic', serif;
-          font-size: 18px;
+          font-size: 20px;
           direction: rtl;
           font-weight: 600;
+          color: #2d5a87;
         }
         
         .details-row {
           display: table;
           width: 100%;
-          margin-bottom: 20px;
+          margin-bottom: 25px;
         }
         
         .bill-to-section {
@@ -205,14 +221,23 @@ export default function PrintInvoicePage() {
         }
         
         .section-title {
-          font-weight: bold;
-          margin-bottom: 8px;
-          font-size: 12px;
+          font-weight: 700;
+          margin-bottom: 10px;
+          font-size: 14px;
+          color: #1e3a5f;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
         
         .detail-line {
-          font-size: 11px;
-          margin: 4px 0;
+          font-size: 12px;
+          margin: 5px 0;
+          color: #4a5568;
+        }
+        
+        .detail-line strong {
+          color: #1e3a5f;
+          font-weight: 600;
         }
         
         .qr-code {
@@ -225,78 +250,118 @@ export default function PrintInvoicePage() {
         .qr-code img {
           width: 120px;
           height: 120px;
-          border: 1px solid #ddd;
+          border: 2px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 5px;
+          background: white;
         }
         
         .items-table {
           width: 100%;
           border-collapse: collapse;
-          margin: 20px 0;
-          font-size: 10px;
+          margin: 25px 0;
+          font-size: 11px;
         }
         
         .items-table th {
-          background: #f0f0f0;
-          border: 1px solid #000;
-          padding: 8px 6px;
+          background: #1e3a5f;
+          color: white;
+          border: 1px solid #1e3a5f;
+          padding: 12px 8px;
           text-align: center;
-          font-weight: bold;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          font-size: 10px;
         }
         
         .items-table td {
-          border: 1px solid #000;
-          padding: 8px 6px;
+          border: 1px solid #e2e8f0;
+          padding: 10px 8px;
+          color: #2d3748;
+        }
+        
+        .items-table tbody tr:nth-child(even) {
+          background: #f7fafc;
         }
         
         .items-table .col-num { width: 30px; text-align: center; }
         .items-table .col-desc { text-align: left; }
         .items-table .col-qty { width: 50px; text-align: center; }
-        .items-table .col-rate { width: 60px; text-align: right; }
-        .items-table .col-amount { width: 80px; text-align: right; }
-        .items-table .col-tax { width: 70px; text-align: right; }
-        .items-table .col-total { width: 80px; text-align: right; }
+        .items-table .col-rate { width: 70px; text-align: right; }
+        .items-table .col-amount { width: 90px; text-align: right; }
+        .items-table .col-tax { width: 80px; text-align: right; }
+        .items-table .col-total { width: 90px; text-align: right; }
         
         .total-row {
-          background: #f8f8f8;
-          font-weight: bold;
+          background: #edf2f7 !important;
+          font-weight: 700;
+          color: #1e3a5f;
+        }
+        
+        .total-row td {
+          border-top: 2px solid #1e3a5f;
         }
         
         .summary-section {
           text-align: right;
-          margin: 20px 0;
+          margin: 25px 0;
         }
         
         .net-amount {
           display: inline-block;
-          border-top: 2px solid #000;
-          padding-top: 10px;
-          min-width: 250px;
+          background: #1e3a5f;
+          color: white;
+          padding: 15px 25px;
+          border-radius: 8px;
+          min-width: 280px;
         }
         
         .net-amount-label {
-          font-weight: bold;
-          font-size: 12px;
+          font-weight: 600;
+          font-size: 14px;
+          opacity: 0.9;
         }
         
         .net-amount-value {
-          font-weight: bold;
-          font-size: 14px;
-          margin-left: 20px;
+          font-weight: 700;
+          font-size: 18px;
+          margin-left: 15px;
         }
         
         .amount-words {
-          margin: 20px 0;
-          font-size: 11px;
+          margin: 25px 0;
+          font-size: 12px;
+          color: #4a5568;
+          padding: 12px 15px;
+          background: #f7fafc;
+          border-left: 4px solid #1e3a5f;
+          border-radius: 0 8px 8px 0;
+        }
+        
+        .amount-words strong {
+          color: #1e3a5f;
         }
         
         .bank-details {
-          margin-top: 30px;
-          font-size: 10px;
-          color: #555;
+          margin-top: 35px;
+          font-size: 11px;
+          color: #4a5568;
+          padding: 15px;
+          background: #f7fafc;
+          border-radius: 8px;
+          border: 1px solid #e2e8f0;
         }
         
         .bank-details p {
-          margin: 3px 0;
+          margin: 4px 0;
+        }
+        
+        .bank-details p:first-child {
+          font-weight: 700;
+          color: #1e3a5f;
+          font-size: 12px;
+          margin-bottom: 8px;
         }
         
         .bank-details .arabic-text {
@@ -313,35 +378,40 @@ export default function PrintInvoicePage() {
         }
         
         .btn {
-          padding: 10px 20px;
+          padding: 12px 24px;
           border: none;
-          border-radius: 5px;
+          border-radius: 8px;
           cursor: pointer;
           font-size: 14px;
-          font-weight: bold;
+          font-weight: 600;
+          font-family: 'Inter', sans-serif;
+          transition: all 0.2s ease;
         }
         
         .btn-print {
-          background: #007bff;
+          background: #1e3a5f;
           color: white;
         }
         
         .btn-print:hover {
-          background: #0056b3;
+          background: #152a45;
+          transform: translateY(-1px);
         }
         
         .btn-pdf {
-          background: #28a745;
+          background: #059669;
           color: white;
         }
         
         .btn-pdf:hover {
-          background: #1e7e34;
+          background: #047857;
+          transform: translateY(-1px);
         }
         
         .btn:disabled {
           opacity: 0.6;
           cursor: not-allowed;
+          transform: none;
         }
       `}</style>
 

@@ -355,12 +355,12 @@ export default function PrintInvoicePage() {
         .items-table th .arabic-text {
           display: block;
           font-family: 'Noto Naskh Arabic', serif;
-          font-size: 10px;
-          font-weight: 600;
+          font-size: 9px;
+          font-weight: 500;
           text-transform: none;
           margin-top: 2px;
           direction: rtl;
-          unicode-bidi: embed;
+          color: #b8d4f0;
         }
         
         .items-table td {

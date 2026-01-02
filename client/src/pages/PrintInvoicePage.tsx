@@ -100,19 +100,31 @@ export default function PrintInvoicePage() {
           const additionalPdfBytes = await additionalPdfResponse.arrayBuffer();
           console.log('Additional PDF size:', additionalPdfBytes.byteLength);
           
-          // Load both PDFs
-          const invoicePdfDoc = await PDFDocument.load(invoicePdfBytes);
+          // Load the additional PDF
           const additionalPdfDoc = await PDFDocument.load(additionalPdfBytes);
           
-          console.log('Invoice PDF pages:', invoicePdfDoc.getPageCount());
-          console.log('Additional PDF pages:', additionalPdfDoc.getPageCount());
-          
-          // Create a new PDF document for the merged result
+          // Create a new PDF and embed the invoice image as first page
           const mergedPdf = await PDFDocument.create();
           
-          // Copy invoice pages first
-          const invoicePages = await mergedPdf.copyPages(invoicePdfDoc, invoicePdfDoc.getPageIndices());
-          invoicePages.forEach(page => mergedPdf.addPage(page));
+          // Add invoice page with the image
+          const invoicePage = mergedPdf.addPage([595.28, 841.89]); // A4 size in points
+          const pngImage = await mergedPdf.embedPng(imgData);
+          
+          // Scale image to fit A4 page with margins
+          const pageWidth = invoicePage.getWidth();
+          const pageHeight = invoicePage.getHeight();
+          const imgDims = pngImage.scale(1);
+          const scale = Math.min(
+            (pageWidth - 20) / imgDims.width,
+            (pageHeight - 20) / imgDims.height
+          );
+          
+          invoicePage.drawImage(pngImage, {
+            x: (pageWidth - imgDims.width * scale) / 2,
+            y: pageHeight - imgDims.height * scale - 10,
+            width: imgDims.width * scale,
+            height: imgDims.height * scale,
+          });
           
           // Copy additional PDF pages
           const additionalPages = await mergedPdf.copyPages(additionalPdfDoc, additionalPdfDoc.getPageIndices());

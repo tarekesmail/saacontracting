@@ -30,10 +30,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      // Try to get user info from token
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
+        
+        // Check if token is expired
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
+          console.log('Token expired, clearing...');
+          localStorage.removeItem('token');
+          delete api.defaults.headers.common['Authorization'];
+          setLoading(false);
+          return;
+        }
+        
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         // Set user object from token payload
         setUser({
           id: payload.id,

@@ -24,21 +24,17 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // For 401 errors, don't redirect here - let components handle it
+    // This prevents redirect loops when token is invalid
     if (error.response?.status === 401) {
-      // Clear token and redirect to login
+      // Just clear the token, components will handle logout/redirect
       localStorage.removeItem('token');
-      // Only redirect if not already on login page to prevent loop
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
-      }
+      delete api.defaults.headers.common['Authorization'];
       return Promise.reject(error);
     }
 
-    // Don't show toast for 401 errors (already handled above)
-    if (error.response?.status !== 401) {
-      const message = error.response?.data?.error || 'An error occurred';
-      toast.error(message);
-    }
+    const message = error.response?.data?.error || 'An error occurred';
+    toast.error(message);
     
     return Promise.reject(error);
   }

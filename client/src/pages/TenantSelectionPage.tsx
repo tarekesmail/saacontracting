@@ -47,8 +47,11 @@ export default function TenantSelectionPage() {
     try {
       const response = await api.get('/auth/tenants');
       setTenants(response.data);
-    } catch (error) {
-      toast.error('Failed to load tenants');
+    } catch (error: any) {
+      // Don't show error for 401 - the interceptor handles redirect
+      if (error.response?.status !== 401) {
+        toast.error('Failed to load tenants');
+      }
     } finally {
       setLoading(false);
     }

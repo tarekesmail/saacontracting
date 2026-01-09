@@ -90,6 +90,12 @@ const styles = StyleSheet.create({
     marginBottom: 3,
     color: '#4a5568',
   },
+  detailLineArabic: {
+    fontSize: 9,
+    marginBottom: 3,
+    color: '#4a5568',
+    fontFamily: 'Noto Naskh Arabic',
+  },
   detailLabel: {
     fontWeight: 'bold',
     color: '#1e3a5f',
@@ -317,7 +323,7 @@ export const InvoicePDF = ({ invoice }: InvoicePDFProps) => (
       <View style={styles.detailsRow}>
         <View style={styles.billToSection}>
           <Text style={styles.sectionTitle}>Bill To:</Text>
-          <Text style={styles.detailLine}><Text style={styles.detailLabel}>Name:</Text> {invoice.customerName}</Text>
+          <Text style={styles.detailLineArabic}><Text style={styles.detailLabel}>Name:</Text> {invoice.customerName}</Text>
           <Text style={styles.detailLine}><Text style={styles.detailLabel}>Address:</Text> {invoice.customerAddress}</Text>
           <Text style={styles.detailLine}><Text style={styles.detailLabel}>City:</Text> {invoice.customerCity}</Text>
           {invoice.customerVat && (

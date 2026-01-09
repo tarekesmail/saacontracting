@@ -26,11 +26,23 @@ FROM node:18-alpine AS production
 
 WORKDIR /app
 
-# Install required system dependencies
+# Install required system dependencies including Arabic fonts
 RUN apk add --no-cache \
     dumb-init \
     openssl \
-    libc6-compat
+    libc6-compat \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    font-noto \
+    font-noto-arabic
+
+# Set Puppeteer to use system Chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs

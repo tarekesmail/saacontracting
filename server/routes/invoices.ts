@@ -659,14 +659,15 @@ function generateInvoiceHTML(invoice: any): string {
 
   return `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice ${invoice.invoiceNumber}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Arial:wght@400;700&display=swap');
-        
         * {
             margin: 0;
             padding: 0;
@@ -674,7 +675,7 @@ function generateInvoiceHTML(invoice: any): string {
         }
         
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Roboto', 'Noto Sans Arabic', Arial, sans-serif;
             font-size: 11pt;
             line-height: 1.4;
             color: black;
@@ -880,7 +881,7 @@ function generateInvoiceHTML(invoice: any): string {
         <div class="invoice-details">
             <div class="bill-to">
                 <h3>Bill To:</h3>
-                <p><strong>Name:</strong> ${invoice.customerName}</p>
+                <p><strong>Name:</strong> <span style="font-family: 'Noto Sans Arabic', 'Roboto', Arial, sans-serif;">${invoice.customerName}</span></p>
                 <p><strong>Address:</strong> ${invoice.customerAddress}</p>
                 <p><strong>City:</strong> ${invoice.customerCity}</p>
                 ${invoice.customerVat ? `<p><strong>VAT:</strong> ${invoice.customerVat}</p>` : ''}

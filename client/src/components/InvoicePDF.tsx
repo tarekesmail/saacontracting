@@ -1,15 +1,15 @@
 import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer';
 
-// Register Noto Naskh Arabic font with proper format
+// Register Noto Naskh Arabic font from Google Fonts (allowed by CSP)
 Font.register({
   family: 'Noto Naskh Arabic',
   fonts: [
     {
-      src: 'https://cdn.jsdelivr.net/npm/@fontsource/noto-naskh-arabic@5.0.3/files/noto-naskh-arabic-arabic-400-normal.woff',
+      src: 'https://fonts.gstatic.com/s/notonaskharabic/v33/RrQ5bpV-9Dd1b1OAGA6M9PkyDuVBePeKNaxcsss0Y7bwvc5krK0z9_Mnuw.ttf',
       fontWeight: 400,
     },
     {
-      src: 'https://cdn.jsdelivr.net/npm/@fontsource/noto-naskh-arabic@5.0.3/files/noto-naskh-arabic-arabic-700-normal.woff',
+      src: 'https://fonts.gstatic.com/s/notonaskharabic/v33/RrQ5bpV-9Dd1b1OAGA6M9PkyDuVBePeKNaxcsss0Y7bwj89krK0z9_Mnuw.ttf',
       fontWeight: 700,
     },
   ],

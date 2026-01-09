@@ -1,18 +1,16 @@
 import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer';
 
-// Register Noto Naskh Arabic font from Google Fonts (allowed by CSP)
+// Register Noto Naskh Arabic font
 Font.register({
   family: 'Noto Naskh Arabic',
-  fonts: [
-    {
-      src: 'https://fonts.gstatic.com/s/notonaskharabic/v33/RrQ5bpV-9Dd1b1OAGA6M9PkyDuVBePeKNaxcsss0Y7bwvc5krK0z9_Mnuw.ttf',
-      fontWeight: 400,
-    },
-    {
-      src: 'https://fonts.gstatic.com/s/notonaskharabic/v33/RrQ5bpV-9Dd1b1OAGA6M9PkyDuVBePeKNaxcsss0Y7bwj89krK0z9_Mnuw.ttf',
-      fontWeight: 700,
-    },
-  ],
+  src: 'https://fonts.gstatic.com/s/notonaskharabic/v33/RrQ5bpV-9Dd1b1OAGA6M9PkyDuVBePeKNaxcsss0Y7bwvc5krK0z9_Mnuw.ttf',
+  fontWeight: 'normal',
+});
+
+Font.register({
+  family: 'Noto Naskh Arabic',
+  src: 'https://fonts.gstatic.com/s/notonaskharabic/v33/RrQ5bpV-9Dd1b1OAGA6M9PkyDuVBePeKNaxcsss0Y7bwj89krK0z9_Mnuw.ttf',
+  fontWeight: 'bold',
 });
 
 // Styles
@@ -91,12 +89,6 @@ const styles = StyleSheet.create({
     fontSize: 9,
     marginBottom: 3,
     color: '#4a5568',
-  },
-  detailLineArabic: {
-    fontSize: 9,
-    marginBottom: 3,
-    color: '#4a5568',
-    fontFamily: 'Noto Naskh Arabic',
   },
   detailLabel: {
     fontWeight: 'bold',
@@ -325,7 +317,10 @@ export const InvoicePDF = ({ invoice }: InvoicePDFProps) => (
       <View style={styles.detailsRow}>
         <View style={styles.billToSection}>
           <Text style={styles.sectionTitle}>Bill To:</Text>
-          <Text style={styles.detailLineArabic}><Text style={styles.detailLabel}>Name:</Text> {invoice.customerName}</Text>
+          <Text style={styles.detailLine}>
+            <Text style={styles.detailLabel}>Name: </Text>
+            <Text style={{ fontFamily: 'Noto Naskh Arabic' }}>{invoice.customerName}</Text>
+          </Text>
           <Text style={styles.detailLine}><Text style={styles.detailLabel}>Address:</Text> {invoice.customerAddress}</Text>
           <Text style={styles.detailLine}><Text style={styles.detailLabel}>City:</Text> {invoice.customerCity}</Text>
           {invoice.customerVat && (

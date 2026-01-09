@@ -60,24 +60,25 @@ async function generateZATCAQRCode(invoice: any, tenant: any): Promise<string> {
 
 // Generate sequential invoice number for the month
 async function generateMonthlyInvoiceNumber(tenantId: string, month: number, year: number): Promise<string> {
-  const lastInvoice = await prisma.invoice.findFirst({
+  // Get all invoices for this month to find the highest number
+  const invoices = await prisma.invoice.findMany({
     where: { 
       tenantId,
       invoiceMonth: month,
       invoiceYear: year
     },
-    orderBy: { invoiceNumber: 'desc' }
+    select: { invoiceNumber: true }
   });
 
-  let nextNumber = 1;
-  if (lastInvoice && lastInvoice.invoiceNumber) {
-    const lastNumber = parseInt(lastInvoice.invoiceNumber);
-    if (!isNaN(lastNumber)) {
-      nextNumber = lastNumber + 1;
+  let maxNumber = 0;
+  invoices.forEach(inv => {
+    const num = parseInt(inv.invoiceNumber);
+    if (!isNaN(num) && num > maxNumber) {
+      maxNumber = num;
     }
-  }
+  });
 
-  return nextNumber.toString();
+  return (maxNumber + 1).toString();
 }
 
 // Generate monthly invoice from timesheets

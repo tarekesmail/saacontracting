@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { numberToWords } from '../utils/numberToWords';
+import { formatDate } from '../utils/dateFormat';
 import { pdf } from '@react-pdf/renderer';
 import { PDFDocument } from 'pdf-lib';
 import { InvoicePDF } from '../components/InvoicePDF';
@@ -585,8 +586,8 @@ export default function PrintInvoicePage() {
           </div>
           <div className="invoice-info-section">
             <div className="detail-line"><strong>Invoice #:</strong> {invoice.invoiceNumber}</div>
-            <div className="detail-line"><strong>Invoice Date:</strong> {new Date(invoice.issueDate).toLocaleDateString()}</div>
-            <div className="detail-line"><strong>Due Date:</strong> {new Date(invoice.dueDate).toLocaleDateString()}</div>
+            <div className="detail-line"><strong>Invoice Date:</strong> {formatDate(invoice.issueDate)}</div>
+            <div className="detail-line"><strong>Due Date:</strong> {formatDate(invoice.dueDate)}</div>
             
             {invoice.qrCode && (
               <div className="qr-code">

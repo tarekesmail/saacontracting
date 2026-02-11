@@ -1,5 +1,14 @@
 import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer';
 
+// Format date as DD/MM/YYYY
+const formatDate = (date: string | Date): string => {
+  const d = new Date(date);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
 // Register Noto Naskh Arabic font
 Font.register({
   family: 'Noto Naskh Arabic',
@@ -329,8 +338,8 @@ export const InvoicePDF = ({ invoice }: InvoicePDFProps) => (
         </View>
         <View style={styles.invoiceInfoSection}>
           <Text style={styles.detailLine}><Text style={styles.detailLabel}>Invoice #:</Text> {invoice.invoiceNumber}</Text>
-          <Text style={styles.detailLine}><Text style={styles.detailLabel}>Invoice Date:</Text> {new Date(invoice.issueDate).toLocaleDateString()}</Text>
-          <Text style={styles.detailLine}><Text style={styles.detailLabel}>Due Date:</Text> {new Date(invoice.dueDate).toLocaleDateString()}</Text>
+          <Text style={styles.detailLine}><Text style={styles.detailLabel}>Invoice Date:</Text> {formatDate(invoice.issueDate)}</Text>
+          <Text style={styles.detailLine}><Text style={styles.detailLabel}>Due Date:</Text> {formatDate(invoice.dueDate)}</Text>
           {invoice.qrCode && (
             <Image src={invoice.qrCode} style={styles.qrCode} />
           )}

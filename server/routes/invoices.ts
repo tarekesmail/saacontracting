@@ -619,6 +619,15 @@ router.get('/:id/pdf', async (req: AuthRequest, res, next) => {
   }
 });
 
+// Helper function to format date as DD/MM/YYYY
+function formatDate(date: Date | string): string {
+  const d = new Date(date);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
 // Helper function to generate HTML content for PDF
 function generateInvoiceHTML(invoice: any): string {
   const numberToWords = (num: number): string => {
@@ -889,8 +898,8 @@ function generateInvoiceHTML(invoice: any): string {
             <div class="invoice-meta">
                 <div>
                     <p><strong>Invoice #:</strong> ${invoice.invoiceNumber}</p>
-                    <p><strong>Invoice Date:</strong> ${new Date(invoice.issueDate).toLocaleDateString()}</p>
-                    <p><strong>Due Date:</strong> ${new Date(invoice.dueDate).toLocaleDateString()}</p>
+                    <p><strong>Invoice Date:</strong> ${formatDate(invoice.issueDate)}</p>
+                    <p><strong>Due Date:</strong> ${formatDate(invoice.dueDate)}</p>
                 </div>
                 
                 ${invoice.qrCode ? `

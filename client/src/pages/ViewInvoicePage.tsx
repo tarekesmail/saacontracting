@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { numberToWords } from '../utils/numberToWords';
+import { formatDate } from '../utils/dateFormat';
 import { 
   ArrowLeftIcon,
   DocumentArrowDownIcon,
@@ -159,7 +160,7 @@ export default function ViewInvoicePage() {
               Invoice #{invoice.invoiceNumber}
             </h1>
             <p className="mt-1 text-sm text-gray-500">
-              {invoice.customerName} • {new Date(invoice.issueDate).toLocaleDateString()}
+              {invoice.customerName} • {formatDate(invoice.issueDate)}
             </p>
           </div>
         </div>
@@ -244,8 +245,8 @@ export default function ViewInvoicePage() {
             <div className="text-right flex flex-col items-end">
               <div className="mb-4">
                 <p className="mb-1"><strong>Invoice #:</strong> {invoice.invoiceNumber}</p>
-                <p className="mb-1"><strong>Invoice Date:</strong> {new Date(invoice.issueDate).toLocaleDateString()}</p>
-                <p className="mb-1"><strong>Due Date:</strong> {new Date(invoice.dueDate).toLocaleDateString()}</p>
+                <p className="mb-1"><strong>Invoice Date:</strong> {formatDate(invoice.issueDate)}</p>
+                <p className="mb-1"><strong>Due Date:</strong> {formatDate(invoice.dueDate)}</p>
               </div>
               
               {/* QR Code */}
